@@ -66,11 +66,13 @@ jobs:
 
         # 3. Also add CachyOS repo to the airootfs pacman.conf so the live
         #    system can pull CachyOS packages after boot.
+        #    Hardcode x86_64 — airootfs pacman.conf has no Architecture set,
+        #    so $arch doesn't resolve when mkarchiso runs pacman -Q on it.
         cat >> ./frog-profile/airootfs/etc/pacman.conf <<'EOF'
 
         [cachyos]
         SigLevel = Required DatabaseOptional
-        Server = https://mirror.cachyos.org/repo/$arch/$repo
+        Server = https://mirror.cachyos.org/repo/x86_64/cachyos
         EOF
 
         # 4. Copy your custom repository package list into the profile workspace
