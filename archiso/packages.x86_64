@@ -1,7 +1,6 @@
 # =====================================================================
 # FROG LINUX - PACKAGES CONFIGURATION (packages.x86_64)
 # =====================================================================
-
 # Kernels & System Firmware
 linux
 linux-firmware
