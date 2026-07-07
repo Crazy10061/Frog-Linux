@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Install Frog Linux
+GenericName=System Installer
+Comment=Install Frog Linux to your disk
+Type=Application
+Categories=System;
+Icon=calamares
+Exec=sudo -E calamares
+Terminal=false
+StartupNotify=false

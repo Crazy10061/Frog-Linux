@@ -46,3 +46,17 @@ git
 curl
 fastfetch
 nano
+# Installer (Calamares) + prerequisites
+calamares
+sudo
+polkit
+qt6-svg
+qt6-declarative
+kpmcore
+squashfs-tools
+rsync
+which
+gptfdisk
+dosfstools
+e2fsprogs
+ntfs-3g

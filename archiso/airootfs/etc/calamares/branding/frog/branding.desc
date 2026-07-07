@@ -1,0 +1,33 @@
+---
+componentName: frog
+
+welcomeStyleCalamares: true
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 800px,520px
+windowPlacement: center
+
+strings:
+    productName:         Frog Linux
+    shortProductName:    Frog
+    version:             Rolling
+    shortVersion:        Rolling
+    versionedName:       Frog Linux (Rolling)
+    shortVersionedName:  Frog Rolling
+    bootloaderEntryName: Frog Linux
+    productUrl:          https://github.com/Crazy10061/Frog-Linux
+    supportUrl:          https://github.com/Crazy10061/Frog-Linux/issues
+    releaseNotesUrl:     https://github.com/Crazy10061/Frog-Linux/releases
+
+images:
+    productLogo:         "logo.png"
+    productIcon:         "logo.png"
+    productWelcome:      "welcome.png"
+
+slideshow:               "show.qml"
+
+style:
+    sidebarBackground:    "#2a6b3f"
+    sidebarText:          "#FFFFFF"
+    sidebarTextSelect:    "#4caf50"
+    sidebarTextHighlight: "#8fce9c"
