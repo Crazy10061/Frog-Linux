@@ -16,6 +16,8 @@ intel-ucode
 amd-ucode
 mkinitcpio
 mkinitcpio-archiso
+mkinitcpio-nfs-utils
+nbd
 syslinux
 mtools
 edk2-shell
