@@ -86,35 +86,38 @@ jobs:
           cp -r archiso/airootfs/. ./frog-profile/airootfs/
         fi
 
-        # 6. Create the live user `arch` (matches lxdm autologin) with an
-        #    empty password and wheel group membership.
+        # 6. Create the live user `arch` (matches lightdm autologin) with an
+        #    empty password, wheel + autologin group membership.
         AIROOTFS=./frog-profile/airootfs
         mkdir -p "$AIROOTFS/etc" "$AIROOTFS/home/arch"
         touch "$AIROOTFS/etc/passwd" "$AIROOTFS/etc/shadow" "$AIROOTFS/etc/group" "$AIROOTFS/etc/gshadow"
-        # Append rather than overwrite so releng's root entry stays intact
         grep -q '^arch:' "$AIROOTFS/etc/passwd" 2>/dev/null || \
           echo 'arch:x:1000:1000:Live User:/home/arch:/bin/bash' >> "$AIROOTFS/etc/passwd"
         grep -q '^arch:' "$AIROOTFS/etc/shadow" 2>/dev/null || \
           echo 'arch::19000:0:99999:7:::' >> "$AIROOTFS/etc/shadow"
-        grep -q '^arch:' "$AIROOTFS/etc/group" 2>/dev/null || {
-          echo 'arch:x:1000:'         >> "$AIROOTFS/etc/group"
-          # Ensure wheel group exists and includes arch
-          if grep -q '^wheel:' "$AIROOTFS/etc/group"; then
-            sed -i 's/^\(wheel:x:[0-9]*:\)\(.*\)$/\1arch/' "$AIROOTFS/etc/group"
-          else
-            echo 'wheel:x:998:arch' >> "$AIROOTFS/etc/group"
-          fi
-        }
+        # Add primary group for arch
+        grep -q '^arch:' "$AIROOTFS/etc/group" 2>/dev/null || \
+          echo 'arch:x:1000:' >> "$AIROOTFS/etc/group"
+        # Ensure wheel and autologin groups exist and include arch
+        if grep -q '^wheel:' "$AIROOTFS/etc/group"; then
+          sed -i '/^wheel:/ s/$/arch/' "$AIROOTFS/etc/group"
+        else
+          echo 'wheel:x:998:arch' >> "$AIROOTFS/etc/group"
+        fi
+        if grep -q '^autologin:' "$AIROOTFS/etc/group"; then
+          sed -i '/^autologin:/ s/$/arch/' "$AIROOTFS/etc/group"
+        else
+          echo 'autologin:x:997:arch' >> "$AIROOTFS/etc/group"
+        fi
         # Copy skel into the live user's home so autostart + fastfetch land
         cp -rT "$AIROOTFS/etc/skel" "$AIROOTFS/home/arch"
 
-        # 7. Enable required services in the airootfs (mkarchiso build runs
-        #    outside a chroot, so we create the wants/ symlinks directly).
+        # 7. Enable required services in the airootfs.
         WANTS_MU="$AIROOTFS/etc/systemd/system/multi-user.target.wants"
         WANTS_GR="$AIROOTFS/etc/systemd/system/graphical.target.wants"
         mkdir -p "$WANTS_MU" "$WANTS_GR"
         ln -sf /usr/lib/systemd/system/NetworkManager.service "$WANTS_MU/NetworkManager.service"
-        ln -sf /usr/lib/systemd/system/lxdm.service           "$WANTS_GR/lxdm.service"
+        ln -sf /usr/lib/systemd/system/lightdm.service        "$WANTS_GR/lightdm.service"
         ln -sf /usr/lib/systemd/system/ananicy-cpp.service    "$WANTS_MU/ananicy-cpp.service" || true
 
         # 8. Make sudoers.d permissions strict (visudo enforces 0440 / root)
