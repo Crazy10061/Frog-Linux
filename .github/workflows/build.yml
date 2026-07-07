@@ -18,17 +18,23 @@ jobs:
 
     - name: Initialize pacman keyring
       run: |
+        set -euo pipefail
         pacman-key --init
         pacman-key --populate archlinux
 
     - name: Initialize Pacman & Add CachyOS Repos to Host
       run: |
-        pacman -Syu --noconfirm
-        pacman -S --noconfirm archiso git curl
+        set -euo pipefail
+
+        # Clean/sync package DB + refresh keyring first
+        pacman -Syy --noconfirm archlinux-keyring
+
+        # Install only required build tools (avoid full upgrade in CI)
+        pacman -S --noconfirm --needed archiso git curl tar
 
         # Set up CachyOS keyring and repositories on the build host
-        curl -O https://mirror.cachyos.org/cachyos-repo.tar.xz
-        tar xvf cachyos-repo.tar.xz
+        curl -LO https://mirror.cachyos.org/cachyos-repo.tar.xz
+        tar -xf cachyos-repo.tar.xz
         cd cachyos-repo
         # Run script non-interactively
         echo -e "1\n" | ./cachyos-repo.sh
