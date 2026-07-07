@@ -39,7 +39,7 @@ xfce4
 xfce4-goodies
 lxdm
 # Gaming & Core Utilities
-prism-launcher
+prismlauncher
 git
 curl
 fastfetch
