@@ -38,7 +38,8 @@ dialog
 # Graphical Interface 
 xfce4
 xfce4-goodies
-lxdm
+lightdm-gtk-greeter
+lightdm
 # Gaming & Core Utilities
 prismlauncher
 git
