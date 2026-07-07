@@ -16,20 +16,31 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Initialize Pacman & Install Archiso
+    - name: Initialize Pacman & Add CachyOS Repos to Host
       run: |
         pacman -Syu --noconfirm
-        pacman -S --noconfirm archiso git
+        pacman -S --noconfirm archiso git curl
 
-    - name: Set Up Archiso Profile
+        # Set up CachyOS keyring and repositories on the build host
+        curl -O https://mirror.cachyos.org/cachyos-repo.tar.xz
+        tar xvf cachyos-repo.tar.xz
+        cd cachyos-repo
+        # Run script non-interactively
+        echo -e "1\n" | ./cachyos-repo.sh
+        cd ..
+
+    - name: Set Up Archiso Profile with Dual Kernels
       run: |
-        # Copy the default releng profile (the standard Arch ISO layout)
+        # 1. Create the workspace profile from the official layout
         cp -r /usr/share/archiso/configs/releng/ ./frog-profile
         
-        # Append your custom hardware/frog packages to the official list
-        cat archiso/packages.x86_64 >> ./frog-profile/packages.x86_64
+        # 2. Inject CachyOS repos into the profile's pacman.conf
+        cat /etc/pacman.conf > ./frog-profile/pacman.conf
+
+        # 3. Copy your custom repository package list into the profile workspace
+cp archiso/packages.x86_64 ./frog-profile/packages.x86_64
         
-        # Copy your custom frog configurations/wallpapers into the build root
+        # 4. Copy your local configurations (like wallpapers/themes) if they exist
         if [ -d "archiso/airootfs" ]; then
           cp -r archiso/airootfs/* ./frog-profile/airootfs/
         fi
@@ -37,7 +48,7 @@ jobs:
     - name: Build Frog Linux ISO
       run: |
         mkdir ./output
-        # mkarchiso builds the actual bootable image
+        # Run mkarchiso to compile the final bootable ISO
         mkarchiso -v -w ./work -o ./output ./frog-profile
 
     - name: Upload Frog Linux ISO
