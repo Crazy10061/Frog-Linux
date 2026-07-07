@@ -1,1 +1,39 @@
+# =====================================================================
+# FROG LINUX - PACKAGES CONFIGURATION (packages.x86_64)
+# =====================================================================
 
+# Kernels & System Firmware
+linux
+linux-firmware
+sof-firmware
+linux-cachyos
+linux-cachyos-headers
+scx-scheds
+ananicy-cpp
+# Bootloader & Base Architecture
+base
+intel-ucode
+amd-ucode
+mkinitcpio
+mkinitcpio-archiso
+# Display & Graphics Drivers 
+mesa
+xf86-video-amdgpu
+xf86-video-ati
+xf86-video-intel
+xf86-video-nouveau
+#network
+networkmanager
+wireless_tools
+wpa_supplicant
+dialog--
+# Graphical Interface 
+xfce4
+xfce4-goodies
+lxdm
+# Gaming & Core Utilities
+prism-launcher
+git
+curl
+fastfetch
+nano
