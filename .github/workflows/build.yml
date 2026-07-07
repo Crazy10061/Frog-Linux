@@ -54,13 +54,29 @@ jobs:
         # 1. Create the workspace profile from the official layout
         cp -r /usr/share/archiso/configs/releng/ ./frog-profile
         
-        # 2. Inject CachyOS repos into the profile's pacman.conf
-        cat /etc/pacman.conf > ./frog-profile/pacman.conf
+        # 2. Append CachyOS repo to the releng profile's pacman.conf
+        #    (do NOT overwrite — releng's pacman.conf has build-time settings
+        #     paired with airootfs/etc/pacman.conf that we must preserve).
+        cat >> ./frog-profile/pacman.conf <<'EOF'
 
-        # 3. Copy your custom repository package list into the profile workspace
+        [cachyos]
+        SigLevel = Required DatabaseOptional
+        Server = https://mirror.cachyos.org/repo/$arch/$repo
+        EOF
+
+        # 3. Also add CachyOS repo to the airootfs pacman.conf so the live
+        #    system can pull CachyOS packages after boot.
+        cat >> ./frog-profile/airootfs/etc/pacman.conf <<'EOF'
+
+        [cachyos]
+        SigLevel = Required DatabaseOptional
+        Server = https://mirror.cachyos.org/repo/$arch/$repo
+        EOF
+
+        # 4. Copy your custom repository package list into the profile workspace
         cp archiso/packages.x86_64 ./frog-profile/packages.x86_64
-        
-        # 4. Copy your local configurations (like wallpapers/themes) if they exist
+
+        # 5. Copy your local configurations (like wallpapers/themes) if they exist
         if [ -d "archiso/airootfs" ]; then
           cp -r archiso/airootfs/* ./frog-profile/airootfs/
         fi
