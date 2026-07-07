@@ -16,6 +16,11 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: Initialize pacman keyring
+      run: |
+        pacman-key --init
+        pacman-key --populate archlinux
+
     - name: Initialize Pacman & Add CachyOS Repos to Host
       run: |
         pacman -Syu --noconfirm
