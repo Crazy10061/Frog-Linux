@@ -103,8 +103,15 @@ chmod 0440 "$AIROOTFS/etc/sudoers.d/g_wheel"
 chmod +x   "$AIROOTFS/usr/local/bin/frog-init.sh" || true
 
 echo "==> [4/4] Build ISO with mkarchiso"
-mkdir -p ./output
-mkarchiso -v -w ./work -o ./output ./frog-profile
+# The work dir MUST be on a case-sensitive filesystem. If /build is a Windows
+# bind mount (NTFS), pacman fails on /usr/lib/Xorg (file) vs /usr/lib/xorg/
+# (dir) because NTFS folds them together. Keep work on container ext4 and
+# only copy the final ISO back to /build/output.
+WORK=/var/tmp/frog-work
+rm -rf "$WORK"
+mkdir -p "$WORK" ./output
+
+mkarchiso -v -w "$WORK" -o "$(pwd)/output" ./frog-profile
 
 echo
 echo "==> Done. ISO(s) in ./output/:"
