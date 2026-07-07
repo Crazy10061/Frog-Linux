@@ -57,6 +57,12 @@ jobs:
         # 1. Create the workspace profile from the official layout
         cp -r /usr/share/archiso/configs/releng/ ./frog-profile
 
+        # 1a. Override squashfs compressor: xz → zstd. Cuts mkarchiso time
+        #     dramatically for only ~5-10% larger ISO.
+        cat >> ./frog-profile/profiledef.sh <<'EOF'
+        airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '15' '-b' '1M')
+        EOF
+
         # 2. Append CachyOS repo to the releng profile's pacman.conf
         #    (do NOT overwrite — releng's pacman.conf has build-time settings
         #     paired with airootfs/etc/pacman.conf that we must preserve).

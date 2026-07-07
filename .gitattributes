@@ -1,0 +1,37 @@
+# Baseline: treat all text as text, let git normalize to LF in the repo.
+# Windows checkouts get CRLF for editors but the repo stays LF-clean.
+* text=auto
+
+# Files that RUN on Linux (in the container, in mkarchiso, or on the live ISO)
+# must be LF regardless of the checkout OS — CRLF breaks bash, mkarchiso's
+# exact-string matches, systemd unit parsing, and pacman.
+*.sh                 text eol=lf
+*.x86_64             text eol=lf
+*.conf               text eol=lf
+*.desc               text eol=lf
+*.qml                text eol=lf
+*.desktop            text eol=lf
+*.service            text eol=lf
+*.hook               text eol=lf
+*.jsonc              text eol=lf
+*.json               text eol=lf
+*.yml                text eol=lf
+*.yaml               text eol=lf
+
+# Whole trees that ship into Linux
+archiso/**           text eol=lf
+scripts/**           text eol=lf
+.github/**           text eol=lf
+
+# Binary formats — never touch line endings
+*.png                binary
+*.jpg                binary
+*.jpeg               binary
+*.ico                binary
+*.gz                 binary
+*.xz                 binary
+*.zst                binary
+*.tar                binary
+*.tar.gz             binary
+*.tar.xz             binary
+*.iso                binary
