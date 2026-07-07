@@ -26,24 +26,28 @@ jobs:
       run: |
         set -euxo pipefail
 
-        # Always sync Arch keyring first
+        # Refresh Arch keyring first
         pacman -Syy --noconfirm archlinux-keyring ca-certificates curl
 
-        # Add CachyOS repos explicitly (no interactive script)
+        # Trust the CachyOS master signing key so we can verify their packages
+        pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+        pacman-key --lsign-key F3B607488DB35A47
+
+        # Add CachyOS repos (correct URL is $arch/$repo, not $repo/$arch)
         cat >> /etc/pacman.conf <<'EOF'
 
         [cachyos]
         SigLevel = Required DatabaseOptional
-        Server = https://mirror.cachyos.org/repo/$repo/$arch
+        Server = https://mirror.cachyos.org/repo/$arch/$repo
 
         [cachyos-v3]
         SigLevel = Required DatabaseOptional
-        Server = https://mirror.cachyos.org/repo/$repo/$arch
+        Server = https://mirror.cachyos.org/repo/$arch/$repo
         EOF
 
-        # Install CachyOS keyring + mirrorlist first, then refresh DB
-        pacman -Syy --noconfirm cachyos-keyring cachyos-mirrorlist || true
+        # Sync DBs and install CachyOS keyring + mirrorlist
         pacman -Syy --noconfirm
+        pacman -S --noconfirm --needed cachyos-keyring cachyos-mirrorlist
 
         # Install required build tools
         pacman -S --noconfirm --needed archiso git tar
