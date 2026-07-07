@@ -1,0 +1,47 @@
+name: Build Frog Linux ISO
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+      options: --privileged # Required for archiso to mount loop devices
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Initialize Pacman & Install Archiso
+      run: |
+        pacman -Syu --noconfirm
+        pacman -S --noconfirm archiso git
+
+    - name: Set Up Archiso Profile
+      run: |
+        # Copy the default releng profile (the standard Arch ISO layout)
+        cp -r /usr/share/archiso/configs/releng/ ./frog-profile
+        
+        # Append your custom hardware/frog packages to the official list
+        cat archiso/packages.x86_64 >> ./frog-profile/packages.x86_64
+        
+        # Copy your custom frog configurations/wallpapers into the build root
+        if [ -d "archiso/airootfs" ]; then
+          cp -r archiso/airootfs/* ./frog-profile/airootfs/
+        fi
+
+    - name: Build Frog Linux ISO
+      run: |
+        mkdir ./output
+        # mkarchiso builds the actual bootable image
+        mkarchiso -v -w ./work -o ./output ./frog-profile
+
+    - name: Upload Frog Linux ISO
+      uses: actions/upload-artifact@v4
+      with:
+        name: Frog-Linux-ISO
+        path: ./output/*.iso
