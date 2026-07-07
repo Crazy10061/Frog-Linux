@@ -38,7 +38,7 @@ jobs:
         cat /etc/pacman.conf > ./frog-profile/pacman.conf
 
         # 3. Copy your custom repository package list into the profile workspace
-cp archiso/packages.x86_64 ./frog-profile/packages.x86_64
+        cp archiso/packages.x86_64 ./frog-profile/packages.x86_64
         
         # 4. Copy your local configurations (like wallpapers/themes) if they exist
         if [ -d "archiso/airootfs" ]; then
