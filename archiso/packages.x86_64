@@ -1,7 +1,6 @@
 # =====================================================================
 # FROG LINUX - PACKAGES CONFIGURATION (packages.x86_64)
 # =====================================================================
-
 # Kernels & System Firmware
 linux
 linux-firmware
@@ -39,7 +38,8 @@ dialog
 # Graphical Interface 
 xfce4
 xfce4-goodies
-lxdm
+lightdm-gtk-greeter
+lightdm
 # Gaming & Core Utilities
 prismlauncher
 git
