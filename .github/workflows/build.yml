@@ -33,14 +33,11 @@ jobs:
         pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
         pacman-key --lsign-key F3B607488DB35A47
 
-        # Add CachyOS repos (correct URL is $arch/$repo, not $repo/$arch)
+        # Add CachyOS repo (correct URL is $arch/$repo, not $repo/$arch).
+        # Skipping cachyos-v3 — it needs x86_64_v3 microarch, not guaranteed on CI runners.
         cat >> /etc/pacman.conf <<'EOF'
 
         [cachyos]
-        SigLevel = Required DatabaseOptional
-        Server = https://mirror.cachyos.org/repo/$arch/$repo
-
-        [cachyos-v3]
         SigLevel = Required DatabaseOptional
         Server = https://mirror.cachyos.org/repo/$arch/$repo
         EOF
