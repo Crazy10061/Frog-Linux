@@ -9,6 +9,9 @@ linux-cachyos
 linux-cachyos-headers
 scx-scheds
 ananicy-cpp
+# CachyOS repo trust chain (needed for post-install browser picks)
+cachyos-keyring
+cachyos-mirrorlist
 # Bootloader & Base Architecture
 base
 intel-ucode
@@ -24,12 +27,17 @@ memtest86+
 memtest86+-efi
 grub
 efibootmgr
-# Display & Graphics Drivers 
+# Display & Graphics Drivers
+xorg-server
+xorg-xinit
+xorg-apps
 mesa
+vulkan-icd-loader
 xf86-video-amdgpu
 xf86-video-ati
 xf86-video-intel
 xf86-video-nouveau
+xf86-input-libinput
 #network
 networkmanager
 wireless_tools
@@ -40,12 +48,59 @@ xfce4
 xfce4-goodies
 lightdm-gtk-greeter
 lightdm
-# Gaming & Core Utilities
+# Audio (PipeWire stack)
+pipewire
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+wireplumber
+alsa-utils
+
+# Fonts
+ttf-dejavu
+ttf-liberation
+noto-fonts
+noto-fonts-emoji
+
+# Applications
+firefox
 prismlauncher
+
+# CLI / core utilities
 git
 curl
+wget
 fastfetch
 nano
+bash-completion
+unzip
+p7zip
+htop
+usbutils
+
+# Media codecs
+gst-plugins-good
+gst-plugins-bad
+gst-plugins-ugly
+gst-libav
+
+# Bluetooth
+bluez
+bluez-utils
+blueman
+
+# Printing
+cups
+cups-pdf
+system-config-printer
+
+# Kernel headers (DKMS / out-of-tree modules)
+linux-headers
+
+# NVIDIA (open kernel modules — works on Turing/Ampere/Ada; falls back to nouveau otherwise)
+nvidia-open-dkms
+nvidia-utils
+nvidia-settings
 # Installer (Calamares) + prerequisites
 calamares
 sudo
@@ -57,6 +112,14 @@ squashfs-tools
 rsync
 which
 gptfdisk
+parted
 dosfstools
 e2fsprogs
 ntfs-3g
+btrfs-progs
+xfsprogs
+exfatprogs
+f2fs-tools
+cryptsetup
+lvm2
+mdadm

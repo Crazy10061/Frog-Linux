@@ -119,6 +119,8 @@ jobs:
         ln -sf /usr/lib/systemd/system/NetworkManager.service "$WANTS_MU/NetworkManager.service"
         ln -sf /usr/lib/systemd/system/lightdm.service        "$WANTS_GR/lightdm.service"
         ln -sf /usr/lib/systemd/system/ananicy-cpp.service    "$WANTS_MU/ananicy-cpp.service" || true
+        ln -sf /usr/lib/systemd/system/bluetooth.service      "$WANTS_MU/bluetooth.service" || true
+        ln -sf /usr/lib/systemd/system/cups.service           "$WANTS_MU/cups.service" || true
 
         # 8. Make sudoers.d permissions strict (visudo enforces 0440 / root)
         chmod 0440 "$AIROOTFS/etc/sudoers.d/g_wheel"
