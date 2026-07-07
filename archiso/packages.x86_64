@@ -16,6 +16,13 @@ intel-ucode
 amd-ucode
 mkinitcpio
 mkinitcpio-archiso
+syslinux
+mtools
+edk2-shell
+memtest86+
+memtest86+-efi
+grub
+efibootmgr
 # Display & Graphics Drivers 
 mesa
 xf86-video-amdgpu
@@ -26,7 +33,7 @@ xf86-video-nouveau
 networkmanager
 wireless_tools
 wpa_supplicant
-dialog--
+dialog
 # Graphical Interface 
 xfce4
 xfce4-goodies
