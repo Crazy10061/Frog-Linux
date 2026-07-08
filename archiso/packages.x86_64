@@ -1,0 +1,118 @@
+# =====================================================================
+# FROG LINUX - PACKAGES CONFIGURATION (packages.x86_64)
+# =====================================================================
+# Kernels & System Firmware
+linux
+linux-firmware
+sof-firmware
+linux-cachyos
+linux-cachyos-headers
+scx-scheds
+ananicy-cpp
+# CachyOS repo trust chain (needed for post-install browser picks)
+cachyos-keyring
+cachyos-mirrorlist
+# Bootloader & Base Architecture
+base
+intel-ucode
+amd-ucode
+mkinitcpio
+mkinitcpio-archiso
+mkinitcpio-nfs-utils
+nbd
+syslinux
+mtools
+edk2-shell
+memtest86+
+memtest86+-efi
+grub
+efibootmgr
+# Display & Graphics Drivers
+xorg-server
+xorg-xinit
+xorg-server-xwayland
+xorg-apps
+mesa
+vulkan-icd-loader
+xf86-video-amdgpu
+xf86-video-ati
+xf86-video-intel
+xf86-video-nouveau
+xf86-input-libinput
+#network
+networkmanager
+wireless_tools
+wpa_supplicant
+dialog
+# Graphical Interface 
+xfce4
+xfce4-goodies
+lightdm-gtk-greeter
+lightdm
+# Audio (PipeWire stack)
+pipewire
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+wireplumber
+alsa-utils
+# Fonts
+ttf-dejavu
+ttf-liberation
+noto-fonts
+noto-fonts-emoji
+# Applications
+firefox
+prismlauncher
+# CLI / core utilities
+git
+curl
+wget
+fastfetch
+nano
+bash-completion
+unzip
+p7zip
+htop
+usbutils
+# Media codecs
+gst-plugins-good
+gst-plugins-bad
+gst-plugins-ugly
+gst-libav
+# Bluetooth
+bluez
+bluez-utils
+blueman
+# Printing
+cups
+cups-pdf
+system-config-printer
+# Kernel headers 
+linux-headers
+# NVIDIA 
+nvidia-open-dkms
+nvidia-utils
+nvidia-settings
+# Installer
+calamares
+sudo
+polkit
+qt6-svg
+qt6-declarative
+kpmcore
+squashfs-tools
+rsync
+which
+gptfdisk
+parted
+dosfstools
+e2fsprogs
+ntfs-3g
+btrfs-progs
+xfsprogs
+exfatprogs
+f2fs-tools
+cryptsetup
+lvm2
+mdadm

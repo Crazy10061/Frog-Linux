@@ -1,0 +1,155 @@
+name: Build Frog Linux ISO
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+      options: --privileged # Required for archiso to mount loop devices
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Initialize pacman keyring
+      run: |
+        set -euo pipefail
+        pacman-key --init
+        pacman-key --populate archlinux
+
+    - name: Initialize Pacman & Configure Repos
+      run: |
+        set -euxo pipefail
+
+        # Refresh Arch keyring first
+        pacman -Syy --noconfirm archlinux-keyring ca-certificates curl
+
+        # Trust the CachyOS master signing key so we can verify their packages
+        pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+        pacman-key --lsign-key F3B607488DB35A47
+
+        # Add CachyOS repo (correct URL is $arch/$repo, not $repo/$arch).
+        # Skipping cachyos-v3 — it needs x86_64_v3 microarch, not guaranteed on CI runners.
+        cat >> /etc/pacman.conf <<'EOF'
+
+        [cachyos]
+        SigLevel = Required DatabaseOptional
+        Server = https://mirror.cachyos.org/repo/$arch/$repo
+        EOF
+
+        # Sync DBs and install CachyOS keyring + mirrorlist
+        pacman -Syy --noconfirm
+        pacman -S --noconfirm --needed cachyos-keyring cachyos-mirrorlist
+
+        # Install required build tools
+        pacman -S --noconfirm --needed archiso git tar
+
+    - name: Set Up Archiso Profile with Dual Kernels
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # 1. Create the workspace profile from the official layout
+        cp -r /usr/share/archiso/configs/releng/ ./frog-profile
+
+        # 1a. Override squashfs compressor: xz → zstd. Cuts mkarchiso time
+        #     dramatically for only ~5-10% larger ISO.
+        cat >> ./frog-profile/profiledef.sh <<'EOF'
+        airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '15' '-b' '1M')
+        EOF
+
+        # 2. Append CachyOS repo to the releng profile's pacman.conf
+        #    (do NOT overwrite — releng's pacman.conf has build-time settings
+        #     paired with airootfs/etc/pacman.conf that we must preserve).
+        cat >> ./frog-profile/pacman.conf <<'EOF'
+
+        [cachyos]
+        SigLevel = Required DatabaseOptional
+        Server = https://mirror.cachyos.org/repo/$arch/$repo
+        EOF
+
+        # 3. Also add CachyOS repo to the airootfs pacman.conf so the live
+        #    system can pull CachyOS packages after boot.
+        #    Hardcode x86_64 — airootfs pacman.conf has no Architecture set,
+        #    so $arch doesn't resolve when mkarchiso runs pacman -Q on it.
+        cat >> ./frog-profile/airootfs/etc/pacman.conf <<'EOF'
+
+        [cachyos]
+        SigLevel = Required DatabaseOptional
+        Server = https://mirror.cachyos.org/repo/x86_64/cachyos
+        EOF
+
+        # 4. Copy your custom repository package list into the profile workspace
+        cp archiso/packages.x86_64 ./frog-profile/packages.x86_64
+
+        # 5. Copy your local configurations (like wallpapers/themes) if they exist
+        if [ -d "archiso/airootfs" ]; then
+          cp -r archiso/airootfs/. ./frog-profile/airootfs/
+        fi
+
+        # 6. Create the live user `admin` (shown on the lightdm login prompt)
+        #    with password `password`, wheel group membership.
+        AIROOTFS=./frog-profile/airootfs
+        mkdir -p "$AIROOTFS/etc" "$AIROOTFS/home/admin"
+        touch "$AIROOTFS/etc/passwd" "$AIROOTFS/etc/shadow" "$AIROOTFS/etc/group" "$AIROOTFS/etc/gshadow"
+        grep -q '^admin:' "$AIROOTFS/etc/passwd" 2>/dev/null || \
+          echo 'admin:x:1000:1000:Live User:/home/admin:/bin/bash' >> "$AIROOTFS/etc/passwd"
+        grep -q '^admin:' "$AIROOTFS/etc/shadow" 2>/dev/null || \
+          echo 'admin:$6$qWGoNTRX6yQfhnlJ$O96L0iZSxurKLSaQwvi7gXxRdzQR9cpWjvt8rslC29hHL76Wh.MfY0XfFhag4ld2.uVeV58JE6EGBT1m/.LcA0:19000:0:99999:7:::' >> "$AIROOTFS/etc/shadow"
+        # Add primary group for admin
+        grep -q '^admin:' "$AIROOTFS/etc/group" 2>/dev/null || \
+          echo 'admin:x:1000:' >> "$AIROOTFS/etc/group"
+        # Ensure wheel group exists and includes admin.
+        # add_to_group: appends `admin` to the membership list, comma-separated
+        # if the list is non-empty, and is a no-op if admin is already in it.
+        add_to_group() {
+          local grp="$1" file="$AIROOTFS/etc/group"
+          if grep -qE "^${grp}:[^:]*:[^:]*:.*\badmin\b" "$file"; then
+            return 0                                       # already a member
+          fi
+          if grep -qE "^${grp}:[^:]*:[^:]*:$" "$file"; then
+            sed -i "/^${grp}:/ s/\$/admin/" "$file"        # empty membership
+          elif grep -qE "^${grp}:" "$file"; then
+            sed -i "/^${grp}:/ s/\$/,admin/" "$file"       # append with comma
+          else
+            echo "${grp}:x:$2:admin" >> "$file"            # create fresh
+          fi
+        }
+        add_to_group wheel 998
+
+        # Copy skel into the live user's home, then chown to admin (UID 1000).
+        # Without this /home/admin ends up root-owned and xfce4-session fails
+        # silently after login.
+        cp -rT "$AIROOTFS/etc/skel" "$AIROOTFS/home/admin"
+        chown -R 1000:1000 "$AIROOTFS/home/admin"
+
+        # 7. Enable required services in the airootfs.
+        WANTS_MU="$AIROOTFS/etc/systemd/system/multi-user.target.wants"
+        WANTS_GR="$AIROOTFS/etc/systemd/system/graphical.target.wants"
+        mkdir -p "$WANTS_MU" "$WANTS_GR"
+        ln -sf /usr/lib/systemd/system/NetworkManager.service "$WANTS_MU/NetworkManager.service"
+        ln -sf /usr/lib/systemd/system/lightdm.service        "$WANTS_GR/lightdm.service"
+        ln -sf /usr/lib/systemd/system/ananicy-cpp.service    "$WANTS_MU/ananicy-cpp.service" || true
+        ln -sf /usr/lib/systemd/system/bluetooth.service      "$WANTS_MU/bluetooth.service" || true
+        ln -sf /usr/lib/systemd/system/cups.service           "$WANTS_MU/cups.service" || true
+
+        # 8. Make sudoers.d permissions strict (visudo enforces 0440 / root)
+        chmod 0440 "$AIROOTFS/etc/sudoers.d/g_wheel"
+        chmod +x   "$AIROOTFS/usr/local/bin/frog-init.sh" || true
+
+    - name: Build Frog Linux ISO
+      run: |
+        mkdir ./output
+        # Run mkarchiso to compile the final bootable ISO
+        mkarchiso -v -w ./work -o ./output ./frog-profile
+
+    - name: Upload Frog Linux ISO
+      uses: actions/upload-artifact@v4
+      with:
+        name: Frog-Linux-ISO
+        path: ./output/*.iso
