@@ -30,6 +30,7 @@ efibootmgr
 # Display & Graphics Drivers
 xorg-server
 xorg-xinit
+xorg-server-xwayland
 xorg-apps
 mesa
 vulkan-icd-loader
@@ -55,17 +56,14 @@ pipewire-alsa
 pipewire-jack
 wireplumber
 alsa-utils
-
 # Fonts
 ttf-dejavu
 ttf-liberation
 noto-fonts
 noto-fonts-emoji
-
 # Applications
 firefox
 prismlauncher
-
 # CLI / core utilities
 git
 curl
@@ -77,31 +75,26 @@ unzip
 p7zip
 htop
 usbutils
-
 # Media codecs
 gst-plugins-good
 gst-plugins-bad
 gst-plugins-ugly
 gst-libav
-
 # Bluetooth
 bluez
 bluez-utils
 blueman
-
 # Printing
 cups
 cups-pdf
 system-config-printer
-
-# Kernel headers (DKMS / out-of-tree modules)
+# Kernel headers 
 linux-headers
-
-# NVIDIA (open kernel modules — works on Turing/Ampere/Ada; falls back to nouveau otherwise)
+# NVIDIA 
 nvidia-open-dkms
 nvidia-utils
 nvidia-settings
-# Installer (Calamares) + prerequisites
+# Installer
 calamares
 sudo
 polkit
