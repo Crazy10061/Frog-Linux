@@ -78,17 +78,26 @@ grep -q '^arch:' "$AIROOTFS/etc/shadow" 2>/dev/null || \
   echo 'arch::19000:0:99999:7:::' >> "$AIROOTFS/etc/shadow"
 grep -q '^arch:' "$AIROOTFS/etc/group" 2>/dev/null || \
   echo 'arch:x:1000:' >> "$AIROOTFS/etc/group"
-if grep -q '^wheel:' "$AIROOTFS/etc/group"; then
-  sed -i '/^wheel:/ s/$/arch/' "$AIROOTFS/etc/group"
-else
-  echo 'wheel:x:998:arch' >> "$AIROOTFS/etc/group"
-fi
-if grep -q '^autologin:' "$AIROOTFS/etc/group"; then
-  sed -i '/^autologin:/ s/$/arch/' "$AIROOTFS/etc/group"
-else
-  echo 'autologin:x:997:arch' >> "$AIROOTFS/etc/group"
-fi
+add_to_group() {
+  local grp="$1" file="$AIROOTFS/etc/group"
+  if grep -qE "^${grp}:[^:]*:[^:]*:.*\barch\b" "$file"; then
+    return 0
+  fi
+  if grep -qE "^${grp}:[^:]*:[^:]*:$" "$file"; then
+    sed -i "/^${grp}:/ s/\$/arch/" "$file"
+  elif grep -qE "^${grp}:" "$file"; then
+    sed -i "/^${grp}:/ s/\$/,arch/" "$file"
+  else
+    echo "${grp}:x:$2:arch" >> "$file"
+  fi
+}
+add_to_group wheel     998
+add_to_group autologin 997
+
 cp -rT "$AIROOTFS/etc/skel" "$AIROOTFS/home/arch"
+# xfce4-session needs the live user to own their own home; otherwise
+# autologin succeeds then session dies silently.
+chown -R 1000:1000 "$AIROOTFS/home/arch"
 
 WANTS_MU="$AIROOTFS/etc/systemd/system/multi-user.target.wants"
 WANTS_GR="$AIROOTFS/etc/systemd/system/graphical.target.wants"

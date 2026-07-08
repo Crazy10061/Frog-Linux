@@ -104,19 +104,30 @@ jobs:
         # Add primary group for arch
         grep -q '^arch:' "$AIROOTFS/etc/group" 2>/dev/null || \
           echo 'arch:x:1000:' >> "$AIROOTFS/etc/group"
-        # Ensure wheel and autologin groups exist and include arch
-        if grep -q '^wheel:' "$AIROOTFS/etc/group"; then
-          sed -i '/^wheel:/ s/$/arch/' "$AIROOTFS/etc/group"
-        else
-          echo 'wheel:x:998:arch' >> "$AIROOTFS/etc/group"
-        fi
-        if grep -q '^autologin:' "$AIROOTFS/etc/group"; then
-          sed -i '/^autologin:/ s/$/arch/' "$AIROOTFS/etc/group"
-        else
-          echo 'autologin:x:997:arch' >> "$AIROOTFS/etc/group"
-        fi
-        # Copy skel into the live user's home so autostart + fastfetch land
+        # Ensure wheel and autologin groups exist and include arch.
+        # add_to_group: appends `arch` to the membership list, comma-separated
+        # if the list is non-empty, and is a no-op if arch is already in it.
+        add_to_group() {
+          local grp="$1" file="$AIROOTFS/etc/group"
+          if grep -qE "^${grp}:[^:]*:[^:]*:.*\barch\b" "$file"; then
+            return 0                                       # already a member
+          fi
+          if grep -qE "^${grp}:[^:]*:[^:]*:$" "$file"; then
+            sed -i "/^${grp}:/ s/\$/arch/" "$file"         # empty membership
+          elif grep -qE "^${grp}:" "$file"; then
+            sed -i "/^${grp}:/ s/\$/,arch/" "$file"        # append with comma
+          else
+            echo "${grp}:x:$2:arch" >> "$file"             # create fresh
+          fi
+        }
+        add_to_group wheel     998
+        add_to_group autologin 997
+
+        # Copy skel into the live user's home, then chown to arch (UID 1000).
+        # Without this /home/arch ends up root-owned and xfce4-session fails
+        # silently after autologin, which looks like "autologin doesn't work".
         cp -rT "$AIROOTFS/etc/skel" "$AIROOTFS/home/arch"
+        chown -R 1000:1000 "$AIROOTFS/home/arch"
 
         # 7. Enable required services in the airootfs.
         WANTS_MU="$AIROOTFS/etc/systemd/system/multi-user.target.wants"
