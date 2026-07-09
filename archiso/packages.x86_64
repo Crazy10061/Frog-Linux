@@ -2,7 +2,6 @@
 # FROG LINUX - PACKAGES CONFIGURATION (packages.x86_64)
 # =====================================================================
 # Kernels & System Firmware
-linux
 linux-firmware
 sof-firmware
 linux-cachyos
@@ -95,9 +94,7 @@ blueman
 cups
 cups-pdf
 system-config-printer
-# Kernel headers 
-linux-headers
-# NVIDIA 
+# NVIDIA
 nvidia-open-dkms
 nvidia-utils
 nvidia-settings
