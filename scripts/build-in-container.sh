@@ -110,6 +110,10 @@ ln -sf /usr/lib/systemd/system/lightdm.service        "$WANTS_GR/lightdm.service
 ln -sf /usr/lib/systemd/system/ananicy-cpp.service    "$WANTS_MU/ananicy-cpp.service" || true
 ln -sf /usr/lib/systemd/system/bluetooth.service      "$WANTS_MU/bluetooth.service" || true
 ln -sf /usr/lib/systemd/system/cups.service           "$WANTS_MU/cups.service" || true
+# VM guest tools — no-op on bare metal, essential inside a hypervisor
+ln -sf /usr/lib/systemd/system/vboxservice.service      "$WANTS_MU/vboxservice.service" || true
+ln -sf /usr/lib/systemd/system/qemu-guest-agent.service "$WANTS_MU/qemu-guest-agent.service" || true
+ln -sf /usr/lib/systemd/system/vmtoolsd.service         "$WANTS_MU/vmtoolsd.service" || true
 
 chmod 0440 "$AIROOTFS/etc/sudoers.d/g_wheel"
 chmod +x   "$AIROOTFS/usr/local/bin/frog-init.sh" || true

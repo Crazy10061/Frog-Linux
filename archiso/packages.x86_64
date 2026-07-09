@@ -35,7 +35,11 @@ xorg-apps
 mesa
 vulkan-icd-loader
 xf86-video-vmware
+xf86-video-qxl
 virtualbox-guest-utils
+qemu-guest-agent
+spice-vdagent
+open-vm-tools
 xf86-video-amdgpu
 xf86-video-ati
 xf86-video-intel
