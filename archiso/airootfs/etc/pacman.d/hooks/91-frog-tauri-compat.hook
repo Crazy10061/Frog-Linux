@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Applying Tauri/WebKitGTK rendering compat layer...
+When = PostTransaction
+Exec = /usr/local/bin/frog-patch-tauri-desktop.sh

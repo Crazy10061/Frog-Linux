@@ -1,0 +1,4 @@
+# Local mkarchiso build artifacts
+/frog-profile/
+/work/
+/output/

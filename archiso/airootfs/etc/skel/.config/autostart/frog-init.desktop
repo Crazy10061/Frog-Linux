@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Frog Init
+Exec=/usr/local/bin/frog-init.sh
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
