@@ -121,7 +121,11 @@ jobs:
             echo "${grp}:x:$2:admin" >> "$file"            # create fresh
           fi
         }
-        add_to_group wheel 998
+        add_to_group wheel     998
+        # PAM's lightdm-autologin config requires the user to be in the
+        # `autologin` group; without this membership LightDM shows a greeter
+        # instead of logging in directly.
+        add_to_group autologin 997
 
         # Copy skel into the live user's home, then chown to admin (UID 1000).
         # Without this /home/admin ends up root-owned and xfce4-session fails

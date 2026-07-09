@@ -92,7 +92,10 @@ add_to_group() {
     echo "${grp}:x:$2:admin" >> "$file"
   fi
 }
-add_to_group wheel 998
+add_to_group wheel     998
+# PAM's lightdm-autologin config requires the user to be in the `autologin`
+# group; without this LightDM shows a greeter instead of logging in directly.
+add_to_group autologin 997
 
 cp -rT "$AIROOTFS/etc/skel" "$AIROOTFS/home/admin"
 # xfce4-session needs the live user to own their own home; otherwise
