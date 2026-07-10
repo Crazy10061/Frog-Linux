@@ -55,7 +55,6 @@ dialog
 # Graphical Interface 
 xfce4
 xfce4-goodies
-xfce-session
 lightdm-gtk-greeter
 lightdm
 # Audio (PipeWire stack)
