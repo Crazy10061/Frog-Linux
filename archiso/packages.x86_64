@@ -2,6 +2,9 @@
 # FROG LINUX - PACKAGES CONFIGURATION (packages.x86_64)
 # =====================================================================
 # Kernels & System Firmware
+# linux-cachyos is the sole kernel. The workflow rewrites all releng boot
+# menu entries (syslinux/GRUB/systemd-boot) + mkinitcpio preset to point at
+# vmlinuz-linux-cachyos / initramfs-linux-cachyos.img.
 linux-firmware
 sof-firmware
 linux-cachyos

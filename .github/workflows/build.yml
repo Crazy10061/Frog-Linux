@@ -57,6 +57,28 @@ jobs:
         # 1. Create the workspace profile from the official layout
         cp -r /usr/share/archiso/configs/releng/ ./frog-profile
 
+        # 1a-boot. Rewrite every releng boot menu entry (syslinux/GRUB/systemd-boot)
+        #     to point at the CachyOS kernel and initramfs. Also replace the
+        #     mkinitcpio preset so linux-cachyos generates the archiso initramfs
+        #     at the expected /boot path.
+        find ./frog-profile/syslinux ./frog-profile/grub ./frog-profile/efiboot \
+             -type f \( -name '*.cfg' -o -name '*.conf' \) -print0 |
+          xargs -0r sed -i \
+            -e 's|vmlinuz-linux |vmlinuz-linux-cachyos |g' \
+            -e 's|vmlinuz-linux$|vmlinuz-linux-cachyos|g' \
+            -e 's|initramfs-linux\.img|initramfs-linux-cachyos.img|g'
+
+        PRESET_DIR=./frog-profile/airootfs/etc/mkinitcpio.d
+        mkdir -p "$PRESET_DIR"
+        rm -f "$PRESET_DIR/linux.preset"
+        cat > "$PRESET_DIR/linux-cachyos.preset" <<'EOF'
+        # mkinitcpio preset for linux-cachyos (Frog Linux archiso build)
+        PRESETS=('archiso')
+        ALL_kver="/boot/vmlinuz-linux-cachyos"
+        archiso_config="/etc/mkinitcpio.conf.d/archiso.conf"
+        archiso_image="/boot/initramfs-linux-cachyos.img"
+        EOF
+
         # 1a. Override squashfs compressor: xz → zstd. Cuts mkarchiso time
         #     dramatically for only ~5-10% larger ISO.
         cat >> ./frog-profile/profiledef.sh <<'EOF'

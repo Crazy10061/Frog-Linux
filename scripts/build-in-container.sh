@@ -39,6 +39,25 @@ cp -r /usr/share/archiso/configs/releng/ ./frog-profile
 # Same alpm-sandbox disable for the profile pacman.conf pacstrap will use
 sed -i 's/^\s*DownloadUser\s*=/#&/' ./frog-profile/pacman.conf || true
 
+# Rewrite releng boot menus + mkinitcpio preset for linux-cachyos.
+find ./frog-profile/syslinux ./frog-profile/grub ./frog-profile/efiboot \
+     -type f \( -name '*.cfg' -o -name '*.conf' \) -print0 |
+  xargs -0r sed -i \
+    -e 's|vmlinuz-linux |vmlinuz-linux-cachyos |g' \
+    -e 's|vmlinuz-linux$|vmlinuz-linux-cachyos|g' \
+    -e 's|initramfs-linux\.img|initramfs-linux-cachyos.img|g'
+
+PRESET_DIR=./frog-profile/airootfs/etc/mkinitcpio.d
+mkdir -p "$PRESET_DIR"
+rm -f "$PRESET_DIR/linux.preset"
+cat > "$PRESET_DIR/linux-cachyos.preset" <<'EOF'
+# mkinitcpio preset for linux-cachyos (Frog Linux archiso build)
+PRESETS=('archiso')
+ALL_kver="/boot/vmlinuz-linux-cachyos"
+archiso_config="/etc/mkinitcpio.conf.d/archiso.conf"
+archiso_image="/boot/initramfs-linux-cachyos.img"
+EOF
+
 # Override the squashfs compressor to zstd (default is xz). zstd at level 15
 # is ~3-5x faster to compress with only ~5-10% larger output — worth it for
 # both local iteration under QEMU and CI runtime.
