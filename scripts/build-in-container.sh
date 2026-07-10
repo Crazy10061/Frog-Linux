@@ -112,9 +112,7 @@ add_to_group() {
   fi
 }
 add_to_group wheel     998
-# PAM's lightdm-autologin config requires the user to be in the `autologin`
-# group; without this LightDM shows a greeter instead of logging in directly.
-add_to_group autologin 997
+# SDDM's autologin doesn't gate on any group — no autologin membership needed.
 
 cp -rT "$AIROOTFS/etc/skel" "$AIROOTFS/home/admin"
 # xfce4-session needs the live user to own their own home; otherwise
@@ -130,7 +128,7 @@ WANTS_MU="$AIROOTFS/etc/systemd/system/multi-user.target.wants"
 WANTS_GR="$AIROOTFS/etc/systemd/system/graphical.target.wants"
 mkdir -p "$WANTS_MU" "$WANTS_GR"
 ln -sf /usr/lib/systemd/system/NetworkManager.service "$WANTS_MU/NetworkManager.service"
-ln -sf /usr/lib/systemd/system/lightdm.service        "$WANTS_GR/lightdm.service"
+ln -sf /usr/lib/systemd/system/sddm.service           "$WANTS_GR/sddm.service"
 ln -sf /usr/lib/systemd/system/ananicy-cpp.service    "$WANTS_MU/ananicy-cpp.service" || true
 ln -sf /usr/lib/systemd/system/bluetooth.service      "$WANTS_MU/bluetooth.service" || true
 ln -sf /usr/lib/systemd/system/cups.service           "$WANTS_MU/cups.service" || true

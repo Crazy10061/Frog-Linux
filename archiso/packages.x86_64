@@ -52,10 +52,18 @@ wireless_tools
 wpa_supplicant
 dialog
 # Graphical Interface 
-xfce4
-xfce4-goodies
-lightdm-gtk-greeter
-lightdm
+# KDE Plasma desktop + core KDE apps
+plasma-meta
+konsole
+dolphin
+kate
+ark
+gwenview
+spectacle
+xdg-desktop-portal-kde
+phonon-qt6-vlc
+# Display manager
+sddm
 # Audio (PipeWire stack)
 pipewire
 pipewire-pulse
