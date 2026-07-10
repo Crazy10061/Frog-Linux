@@ -121,6 +121,11 @@ cp -rT "$AIROOTFS/etc/skel" "$AIROOTFS/home/admin"
 # login succeeds then session dies silently.
 chown -R 1000:1000 "$AIROOTFS/home/admin"
 
+# Switch default.target from multi-user (releng default, CLI-only) to
+# graphical, otherwise lightdm never starts.
+ln -sf /usr/lib/systemd/system/graphical.target \
+       "$AIROOTFS/etc/systemd/system/default.target"
+
 WANTS_MU="$AIROOTFS/etc/systemd/system/multi-user.target.wants"
 WANTS_GR="$AIROOTFS/etc/systemd/system/graphical.target.wants"
 mkdir -p "$WANTS_MU" "$WANTS_GR"

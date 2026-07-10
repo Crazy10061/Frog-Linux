@@ -156,6 +156,12 @@ jobs:
         chown -R 1000:1000 "$AIROOTFS/home/admin"
 
         # 7. Enable required services in the airootfs.
+        # First: switch default.target to graphical.target. Releng defaults to
+        # multi-user.target (CLI-only), which means anything in graphical.target.wants
+        # (including lightdm.service) never activates.
+        ln -sf /usr/lib/systemd/system/graphical.target \
+               "$AIROOTFS/etc/systemd/system/default.target"
+
         WANTS_MU="$AIROOTFS/etc/systemd/system/multi-user.target.wants"
         WANTS_GR="$AIROOTFS/etc/systemd/system/graphical.target.wants"
         mkdir -p "$WANTS_MU" "$WANTS_GR"
