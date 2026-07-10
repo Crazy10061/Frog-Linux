@@ -36,7 +36,6 @@ xorg-server-xwayland
 xorg-apps
 mesa
 vulkan-icd-loader
-xf86-video-vmware
 xf86-video-qxl
 virtualbox-guest-utils
 qemu-guest-agent
