@@ -49,6 +49,43 @@ jobs:
         # Install required build tools
         pacman -S --noconfirm --needed archiso git tar
 
+    - name: Build calamares from AUR (needs contextualprocess + packagechooser)
+      run: |
+        set -euxo pipefail
+
+        # cachyos-calamares strips contextualprocess; AUR calamares strips
+        # packagechooser. We need both modules for the browser picker, so
+        # rebuild the AUR package with packagechooser un-skipped.
+
+        pacman -S --noconfirm --needed base-devel sudo \
+          kcoreaddons kpmcore libpwquality qt6-declarative qt6-svg yaml-cpp \
+          extra-cmake-modules libglvnd ninja qt6-tools qt6-translations
+
+        # makepkg refuses to run as root — create an unprivileged builder.
+        useradd -m -G wheel builder
+        echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+
+        sudo -Hu builder bash -euxo pipefail <<'BUILD'
+        cd /tmp
+        git clone --depth 1 https://aur.archlinux.org/calamares.git
+        cd calamares
+
+        # Drop packagechooser from the skip list so the resulting package
+        # ships that module too (we reference it in settings.conf). Leave
+        # packagechooserq skipped — we don't use the Qt-only variant.
+        sed -i '/^\s*packagechooser$/d' PKGBUILD
+
+        makepkg -s --noconfirm --nosign
+        BUILD
+
+        # Publish the freshly-built package into a file:// pacman repo that
+        # both the outer pacman.conf and the archiso profile pacman.conf
+        # will consume, ranked above [cachyos] so the AUR build wins over
+        # cachyos-calamares (which conflicts=calamares).
+        mkdir -p /var/local-repo
+        cp /tmp/calamares/calamares-*.pkg.tar.zst /var/local-repo/
+        repo-add /var/local-repo/frog-local.db.tar.zst /var/local-repo/*.pkg.tar.zst
+
     - name: Set Up Archiso Profile with Dual Kernels
       shell: bash
       run: |
@@ -85,10 +122,17 @@ jobs:
         airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '15' '-b' '1M')
         EOF
 
-        # 2. Append CachyOS repo to the releng profile's pacman.conf
+        # 2. Append repos to the releng profile's pacman.conf
         #    (do NOT overwrite — releng's pacman.conf has build-time settings
         #     paired with airootfs/etc/pacman.conf that we must preserve).
+        #    [frog-local] is our AUR-built calamares (with contextualprocess
+        #    + packagechooser); listed BEFORE [cachyos] so pacstrap resolves
+        #    "calamares" to the local build instead of cachyos-calamares.
         cat >> ./frog-profile/pacman.conf <<'EOF'
+
+        [frog-local]
+        SigLevel = Optional TrustAll
+        Server = file:///var/local-repo
 
         [cachyos]
         SigLevel = Required DatabaseOptional
