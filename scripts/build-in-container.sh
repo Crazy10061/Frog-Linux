@@ -9,12 +9,12 @@ set -euo pipefail
 # with no seccomp. Only needed for local emulated builds; harmless on native.
 sed -i 's/^\s*DownloadUser\s*=/#&/' /etc/pacman.conf || true
 
-echo "==> [1/4] Initialize pacman keyring"
+echo "==> [1/5] Initialize pacman keyring"
 # Both commands are internally idempotent — safe to run every time.
 pacman-key --init
 pacman-key --populate archlinux
 
-echo "==> [2/4] Sync keyring, add CachyOS repo, install build tools"
+echo "==> [2/5] Sync keyring, add CachyOS repo, install build tools"
 pacman -Syy --noconfirm --needed archlinux-keyring ca-certificates curl
 
 if ! grep -q '^\[cachyos\]' /etc/pacman.conf; then
@@ -54,7 +54,46 @@ pacman -Syy --noconfirm
 pacman -S --noconfirm --needed cachyos-keyring cachyos-mirrorlist
 pacman -S --noconfirm --needed archiso git tar
 
-echo "==> [3/4] Set up archiso profile"
+echo "==> [3/5] Build calamares from AUR (contextualprocess + packagechooser)"
+# cachyos-calamares strips contextualprocess; AUR calamares strips
+# packagechooser. We need both modules for the browser picker, so rebuild
+# the AUR package with packagechooser un-skipped, then serve it from a
+# file:// pacman repo the archiso profile prefers over [cachyos].
+if [ ! -f /var/local-repo/frog-local.db.tar.zst ]; then
+  pacman -S --noconfirm --needed base-devel sudo \
+    kcoreaddons kpmcore libpwquality qt6-declarative qt6-svg yaml-cpp \
+    extra-cmake-modules libglvnd ninja qt6-tools qt6-translations
+
+  # makepkg refuses to run as root — create an unprivileged builder.
+  if ! id builder >/dev/null 2>&1; then
+    useradd -m -G wheel builder
+    echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+  fi
+
+  # Fresh checkout each run so re-running against an updated AUR PKGBUILD
+  # doesn't reuse a stale tree.
+  rm -rf /tmp/calamares
+  sudo -Hu builder bash -euxo pipefail <<'BUILD'
+cd /tmp
+git clone --depth 1 https://aur.archlinux.org/calamares.git
+cd calamares
+
+# Drop packagechooser from the skip list so the resulting package ships
+# that module too (we reference it in settings.conf). Leave packagechooserq
+# skipped — we don't use the Qt-only variant.
+sed -i '/^\s*packagechooser$/d' PKGBUILD
+
+makepkg -s --noconfirm --nosign
+BUILD
+
+  mkdir -p /var/local-repo
+  cp /tmp/calamares/calamares-*.pkg.tar.zst /var/local-repo/
+  repo-add /var/local-repo/frog-local.db.tar.zst /var/local-repo/*.pkg.tar.zst
+else
+  echo "==> /var/local-repo already populated, skipping rebuild"
+fi
+
+echo "==> [4/5] Set up archiso profile"
 rm -rf ./frog-profile ./work
 cp -r /usr/share/archiso/configs/releng/ ./frog-profile
 
@@ -87,7 +126,14 @@ cat >> ./frog-profile/profiledef.sh <<'EOF'
 airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '15' '-b' '1M')
 EOF
 
+# [frog-local] holds the AUR-built calamares (with contextualprocess +
+# packagechooser); listed BEFORE [cachyos] so pacstrap resolves "calamares"
+# to the local build instead of cachyos-calamares (which conflicts=calamares).
 cat >> ./frog-profile/pacman.conf <<'EOF'
+
+[frog-local]
+SigLevel = Optional TrustAll
+Server = file:///var/local-repo
 
 [cachyos]
 SigLevel = Required DatabaseOptional
@@ -164,7 +210,7 @@ chmod +x   "$AIROOTFS/usr/local/bin/frog-init.sh" || true
 chmod +x   "$AIROOTFS/usr/local/bin/frog-patch-tauri-desktop.sh" || true
 chmod +x   "$AIROOTFS/etc/profile.d/tauri-compat.sh" || true
 
-echo "==> [4/4] Build ISO with mkarchiso"
+echo "==> [5/5] Build ISO with mkarchiso"
 # The work dir MUST be on a case-sensitive filesystem. If /build is a Windows
 # bind mount (NTFS), pacman fails on /usr/lib/Xorg (file) vs /usr/lib/xorg/
 # (dir) because NTFS folds them together. Keep work on container ext4 and
