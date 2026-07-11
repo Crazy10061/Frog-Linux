@@ -18,8 +18,30 @@ echo "==> [2/4] Sync keyring, add CachyOS repo, install build tools"
 pacman -Syy --noconfirm --needed archlinux-keyring ca-certificates curl
 
 if ! grep -q '^\[cachyos\]' /etc/pacman.conf; then
-  pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
-  pacman-key --lsign-key F3B607488DB35A47
+  # Public keyservers are flaky (keyserver.ubuntu.com has returned "Server
+  # indicated a failure" for hours at a stretch). Try several before giving up.
+  CACHY_KEY=F3B607488DB35A47
+  key_ok=0
+  for ks in \
+      hkps://keyserver.ubuntu.com \
+      hkps://keys.openpgp.org \
+      hkps://pgp.mit.edu \
+      hkps://keys.mailvelope.com \
+      keyserver.ubuntu.com; do
+    echo "==> Trying keyserver $ks"
+    if pacman-key --recv-keys "$CACHY_KEY" --keyserver "$ks"; then
+      key_ok=1
+      break
+    fi
+    echo "==> keyserver $ks failed, trying next..."
+  done
+  if [ "$key_ok" = 0 ]; then
+    echo "==> All keyservers failed; fetching CachyOS signing key from GitHub"
+    curl -fsSL \
+      "https://raw.githubusercontent.com/CachyOS/CachyOS-PKGBUILDS/master/cachyos-keyring/cachyos.gpg" \
+      | pacman-key --add -
+  fi
+  pacman-key --lsign-key "$CACHY_KEY"
   cat >> /etc/pacman.conf <<'EOF'
 
 [cachyos]
