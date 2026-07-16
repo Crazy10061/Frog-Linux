@@ -13,8 +13,46 @@ for dir in "${APPDIRS[@]}"; do
     exec_line=$(grep -m1 '^Exec=' "$desktop" || true)
     [ -n "$exec_line" ] || continue
 
-    bin=$(echo "${exec_line#Exec=}" | awk '{print $1}')
-    bin_path=$(command -v "$bin" 2>/dev/null || true)
+    read -r -a tokens <<< "${exec_line#Exec=}"
+    bin_path=""
+    i=0
+    while [ "$i" -lt "${#tokens[@]}" ]; do
+      tok="${tokens[$i]}"
+      case "$tok" in
+        env)
+          i=$((i + 1))
+          while [ "$i" -lt "${#tokens[@]}" ] && [[ "${tokens[$i]}" == *=* ]]; do
+            i=$((i + 1))
+          done
+          continue
+          ;;
+        sh|bash)
+          i=$((i + 1))
+          while [ "$i" -lt "${#tokens[@]}" ] && [ "${tokens[$i]}" != "-c" ]; do
+            i=$((i + 1))
+          done
+          if [ "$i" -lt "${#tokens[@]}" ]; then
+            i=$((i + 1))
+            read -r -a inner <<< "${tokens[$i]:-}"
+            tok="${inner[0]:-}"
+          fi
+          ;;
+        flatpak)
+          i=$((i + 1))
+          while [ "$i" -lt "${#tokens[@]}" ] && [ "${tokens[$i]}" != "run" ]; do
+            i=$((i + 1))
+          done
+          i=$((i + 1))
+          while [ "$i" -lt "${#tokens[@]}" ] && [[ "${tokens[$i]}" == --* ]]; do
+            i=$((i + 1))
+          done
+          tok="${tokens[$i]:-}"
+          ;;
+      esac
+      candidate=$(command -v "$(basename "${tok%%%*}" 2>/dev/null)" 2>/dev/null || true)
+      [ -n "$candidate" ] && bin_path="$candidate" && break
+      i=$((i + 1))
+    done
     [ -n "$bin_path" ] || continue
 
     if ldd "$bin_path" 2>/dev/null | grep -qi 'libwebkit2gtk'; then
