@@ -209,6 +209,10 @@ chmod 0440 "$AIROOTFS/etc/sudoers.d/g_wheel"
 chmod +x   "$AIROOTFS/usr/local/bin/frog-init.sh" || true
 chmod +x   "$AIROOTFS/usr/local/bin/frog-patch-tauri-desktop.sh" || true
 chmod +x   "$AIROOTFS/etc/profile.d/tauri-compat.sh" || true
+# customize_airootfs.sh must be executable — mkarchiso runs it via arch-chroot
+# after pacstrap, and it's what forces the archiso-flavored initramfs onto the
+# linux-cachyos preset (see the script itself for details).
+chmod +x   "$AIROOTFS/root/customize_airootfs.sh"
 
 echo "==> [5/5] Build ISO with mkarchiso"
 # The work dir MUST be on a case-sensitive filesystem. If /build is a Windows
