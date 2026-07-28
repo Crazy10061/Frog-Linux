@@ -1,37 +1,35 @@
 #!/usr/bin/env bash
-# Runs INSIDE the pacstrapped airootfs chroot (mkarchiso _make_customize_airootfs).
-# Purpose: guarantee the linux-cachyos initramfs is built with the archiso
-# hooks. Placing the preset in the airootfs overlay isn't enough — pacstrap
-# installs the linux-cachyos package AFTER the overlay is copied, so the
-# stock preset (PRESETS=('default' 'fallback')) wins and the resulting
-# initramfs has no archiso init, causing:
-#   Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
-# Running this in-chroot after pacstrap lets us overwrite the preset and
-# regenerate the image with archiso hooks.
+# Runs inside the pacstrapped chroot via mkarchiso's _make_customize_airootfs,
+# after pacstrap and after the overlay has been copied in. mkarchiso deletes
+# this script afterwards, so nothing here ships on the ISO.
 set -euo pipefail
 
-cat > /etc/mkinitcpio.d/linux-cachyos.preset <<'EOF'
-# mkinitcpio preset for linux-cachyos (Frog Linux archiso build)
-PRESETS=('archiso')
-ALL_kver="/boot/vmlinuz-linux-cachyos"
-archiso_config="/etc/mkinitcpio.conf.d/archiso.conf"
-archiso_image="/boot/initramfs-linux-cachyos.img"
-EOF
+# Live user's groups.
+# This cannot move into the build driver, which runs before pacstrap when
+# /etc/group does not exist yet. Creating it early makes pacman treat
+# filesystem's /etc/group as a conflicting backup file and divert it to
+# group.pacnew, which _cleanup_pacstrap_dir then deletes. By now /etc/group is
+# the real one: filesystem's root entry plus whatever systemd-sysusers built
+# from /usr/lib/sysusers.d, at canonical GIDs.
+#
+# UID 1500 keeps the live user clear of the 1000+ range Calamares hands to the
+# first real account.
+getent group liveuser >/dev/null || groupadd -g 1500 liveuser
+getent group wheel    >/dev/null || groupadd -r wheel
+usermod -g liveuser -aG wheel liveuser
 
-# Any preset the stock kernel package left behind can only produce a non-archiso
-# initramfs. Nuke stray fallback images so they can't accidentally be picked
-# up by the boot loaders.
+# The archiso preset is already staged in the overlay and pacstrap has already
+# used it: mkinitcpio's alpm hook only writes a preset when none exists, and
+# linux-cachyos ships none. So the initramfs should already be correct and the
+# rest of this is a check, not a fix.
 rm -f /boot/initramfs-linux-cachyos-fallback.img
 
-mkinitcpio -P
-
-# Fail loud if the archiso hooks aren't actually embedded — this catches
-# preset/config drift before it becomes a boot-time kernel panic. A non-archiso
-# initramfs (default/fallback) contains zero paths matching 'archiso'.
-# `|| true` avoids masking the miss when lsinitcpio itself errors under pipefail.
+# Catch preset or config drift here rather than as a kernel panic at boot. A
+# non-archiso initramfs contains no paths matching 'archiso'. The `|| true`
+# keeps a failing lsinitcpio from masking the real result under pipefail.
 initramfs_listing="$(lsinitcpio /boot/initramfs-linux-cachyos.img 2>/dev/null || true)"
 if ! grep -q 'archiso' <<< "$initramfs_listing"; then
     echo "ERROR: /boot/initramfs-linux-cachyos.img has no archiso hooks." >&2
-    echo "The generated initramfs cannot mount the live squashfs and will panic on boot." >&2
+    echo "It cannot mount the live squashfs and will panic on boot." >&2
     exit 1
 fi

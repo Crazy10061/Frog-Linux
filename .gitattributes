@@ -3,7 +3,7 @@
 * text=auto
 
 # Files that RUN on Linux (in the container, in mkarchiso, or on the live ISO)
-# must be LF regardless of the checkout OS — CRLF breaks bash, mkarchiso's
+# must be LF regardless of the checkout OS. CRLF breaks bash, mkarchiso's
 # exact-string matches, systemd unit parsing, and pacman.
 *.sh                 text eol=lf
 *.x86_64             text eol=lf
@@ -23,7 +23,7 @@ archiso/**           text eol=lf
 scripts/**           text eol=lf
 .github/**           text eol=lf
 
-# Binary formats — never touch line endings
+# Binary formats. Never touch line endings.
 *.png                binary
 *.jpg                binary
 *.jpeg               binary

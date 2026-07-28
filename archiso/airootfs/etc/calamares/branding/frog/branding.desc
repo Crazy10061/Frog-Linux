@@ -25,6 +25,9 @@ images:
     productWelcome:      "welcome.png"
 
 slideshow:               "show.qml"
+# show.qml binds its timer to presentation.activatedInCalamares, which is API 2.
+# Without this the binding is undefined and the slideshow sticks on slide one.
+slideshowAPI:            2
 
 style:
     sidebarBackground:    "#2a6b3f"

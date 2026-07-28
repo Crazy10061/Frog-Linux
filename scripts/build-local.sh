@@ -1,48 +1,48 @@
 #!/usr/bin/env bash
-# Frog Linux: local ISO build in Docker (Linux port of build-local.ps1).
-# Uses named volumes so pacman package cache and gnupg keyring persist across
-# runs. First run: cold pacman fetch. Subsequent runs: near-instant deps.
-
-# Usage:    ./scripts/build-local.sh
-
 set -euo pipefail
 
-# Resolve repo root (this script lives in scripts/)
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 REPO="$(dirname -- "$SCRIPT_DIR")"
+
+IMAGE=frog-linux-build
 
 echo "==> Repo:   $REPO"
 echo "==> Output: $REPO/output"
 
-# Sanity check
-if ! command -v docker >/dev/null 2>&1; then
-    echo "docker not on PATH. Install docker and make sure your user can run it" >&2
-    echo "(add to the 'docker' group, or use rootless docker)." >&2
+if command -v docker >/dev/null 2>&1; then
+    ENGINE=docker
+elif command -v podman >/dev/null 2>&1; then
+    ENGINE=podman
+    echo "==> docker not on PATH, using podman"
+else
+    echo "Neither docker nor podman is on PATH. Install one and make sure your" >&2
+    echo "user can run it (add to the 'docker' group, or use rootless)." >&2
     exit 127
 fi
 
-# Persistent volumes for pacman package cache and pacman-key GnuPG state.
-# These survive across container runs and repo rebuilds.
-# `docker volume create` is idempotent — safe to call every run.
-PAC_CACHE=frog-pacman-cache
-PAC_GNUPG=frog-pacman-gnupg
-docker volume create "$PAC_CACHE" >/dev/null
-docker volume create "$PAC_GNUPG" >/dev/null
+MOUNT_SUFFIX=""
+if command -v getenforce >/dev/null 2>&1 && [ "$(getenforce 2>/dev/null || true)" = "Enforcing" ]; then
+    MOUNT_SUFFIX=":z"
+    echo "==> SELinux is enforcing, relabelling the bind mount"
+fi
 
-# Force linux/amd64
-# Arch only publishes x86_64 images. 
-# On x86_64 hosts this is a no-op; on ARM (Raspberry Pi, Ampere, Graviton) it triggers binfmt/QEMU emulation so the build still works, just slower.
-docker run --rm --privileged \
+echo "==> Building toolchain image ($IMAGE)"
+"$ENGINE" build --platform linux/amd64 -t "$IMAGE" "$REPO/docker"
+
+PAC_CACHE=frog-pacman-cache
+"$ENGINE" volume create "$PAC_CACHE" >/dev/null
+
+echo "==> Building ISO"
+"$ENGINE" run --rm --privileged \
     --platform linux/amd64 \
     --security-opt seccomp=unconfined \
     --security-opt apparmor=unconfined \
-    -v "$REPO:/build" \
+    -v "$REPO:/build$MOUNT_SUFFIX" \
     -v "$PAC_CACHE:/var/cache/pacman/pkg" \
-    -v "$PAC_GNUPG:/etc/pacman.d/gnupg" \
     -w /build \
-    archlinux:latest \
-    bash /build/scripts/build-in-container.sh
+    "$IMAGE" \
+    /build/scripts/build-in-container.sh
 
 echo
 echo "==> ISO(s) in $REPO/output"
-ls -lh "$REPO/output"/*.iso 2>/dev/null || echo "(none — build produced no ISO)"
+ls -lh "$REPO/output"/*.iso 2>/dev/null || echo "(none, build produced no ISO)"
