@@ -1,4 +1,5 @@
 import os
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -7,6 +8,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 BROWSER_INSTALLER = REPO / "archiso/airootfs/usr/local/bin/frog-install-browser.sh"
+SMOKE_TEST = REPO / "scripts/smoke-test-iso.sh"
 
 
 class PackageProfileTests(unittest.TestCase):
@@ -127,6 +129,38 @@ class ContinuousIntegrationTests(unittest.TestCase):
 
         self.assertIn("python3 -m unittest discover -s tests -v", workflow)
         self.assertIn("bash scripts/smoke-test-iso.sh", workflow)
+
+
+class SmokeTestScriptTests(unittest.TestCase):
+    def run_bash(self, command):
+        return subprocess.run(
+            ["bash", "-c", f"source {shlex.quote(str(SMOKE_TEST))}; {command}"],
+            text=True,
+            capture_output=True,
+        )
+
+    def test_strips_systemd_ansi_codes_before_matching_sddm(self):
+        result = self.run_bash(
+            "printf $'[\\e[0;32m  OK  \\e[0m] Started "
+            "\\e[0;1;39mSimple Desktop Display Manager\\e[0m.\\n' | strip_ansi"
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(
+            "[  OK  ] Started Simple Desktop Display Manager.\n",
+            result.stdout,
+        )
+
+    def test_cleanup_removes_read_only_extracted_directories(self):
+        result = self.run_bash(
+            'SMOKE_DIR="$(mktemp -d)"; QEMU_PID=""; '
+            'mkdir -p "$SMOKE_DIR/iso-boot/syslinux"; '
+            'touch "$SMOKE_DIR/iso-boot/syslinux/boot.cat"; '
+            'chmod -R a-w "$SMOKE_DIR/iso-boot"; '
+            'cleanup; test ! -e "$SMOKE_DIR"'
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
 
 
 if __name__ == "__main__":

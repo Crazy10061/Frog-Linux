@@ -1,6 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+strip_ansi() {
+    sed $'s/\033\\[[0-9;]*m//g'
+}
+
+# shellcheck disable=SC2317
+cleanup() {
+    if [ -n "$QEMU_PID" ] && kill -0 "$QEMU_PID" 2>/dev/null; then
+        kill "$QEMU_PID"
+        wait "$QEMU_PID" 2>/dev/null || true
+    fi
+    chmod -R u+w "$SMOKE_DIR" 2>/dev/null || true
+    rm -rf -- "$SMOKE_DIR"
+}
+
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    return 0
+fi
+
 ISO_PATH="${1:-}"
 if [ -z "$ISO_PATH" ] || [ ! -f "$ISO_PATH" ]; then
     echo "Usage: $0 /path/to/frog.iso" >&2
@@ -10,14 +28,6 @@ fi
 SMOKE_DIR="$(mktemp -d)"
 QEMU_PID=""
 
-# shellcheck disable=SC2317
-cleanup() {
-    if [ -n "$QEMU_PID" ] && kill -0 "$QEMU_PID" 2>/dev/null; then
-        kill "$QEMU_PID"
-        wait "$QEMU_PID" 2>/dev/null || true
-    fi
-    rm -rf -- "$SMOKE_DIR"
-}
 trap cleanup EXIT
 
 BOOT_REPORT="$(xorriso -indev "$ISO_PATH" -report_el_torito plain 2>&1)"
@@ -37,6 +47,7 @@ if [ "${#UUID_FILES[@]}" -ne 1 ]; then
 fi
 ISO_UUID="$(basename "${UUID_FILES[0]}" .uuid)"
 SERIAL_LOG="$SMOKE_DIR/serial.log"
+NORMALIZED_SERIAL_LOG="$SMOKE_DIR/serial-plain.log"
 QEMU_LOG="$SMOKE_DIR/qemu.log"
 
 qemu-system-x86_64 \
@@ -56,12 +67,16 @@ QEMU_PID=$!
 
 DEADLINE=$((SECONDS + 480))
 while [ "$SECONDS" -lt "$DEADLINE" ]; do
-    if grep -q 'Started Simple Desktop Display Manager' "$SERIAL_LOG" 2>/dev/null; then
+    if [ -f "$SERIAL_LOG" ]; then
+        strip_ansi < "$SERIAL_LOG" > "$NORMALIZED_SERIAL_LOG"
+    fi
+
+    if grep -q 'Started Simple Desktop Display Manager' "$NORMALIZED_SERIAL_LOG" 2>/dev/null; then
         echo "Live ISO reached SDDM."
         exit 0
     fi
 
-    if grep -Eq 'Kernel panic|Entering emergency mode' "$SERIAL_LOG" 2>/dev/null; then
+    if grep -Eq 'Kernel panic|Entering emergency mode' "$NORMALIZED_SERIAL_LOG" 2>/dev/null; then
         echo "ERROR: live ISO entered a fatal boot state." >&2
         tail -n 100 "$SERIAL_LOG" >&2
         exit 1
