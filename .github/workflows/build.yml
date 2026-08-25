@@ -13,8 +13,8 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # plasma-meta, an nvidia-open-dkms build, the pacstrap tree and the squashfs
-    # together get close to the ~14 GB a standard runner offers. These three
+    # plasma-meta, the pacstrap tree and the squashfs together get close to the
+    # ~14 GB a standard runner offers. These three
     # directories are worth about 10 GB and nothing here uses them.
     - name: Free disk space
       run: |
@@ -23,6 +23,21 @@ jobs:
         sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
                     /opt/hostedtoolcache /usr/local/share/boost
         df -h /
+
+    - name: Install smoke-test tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends --yes \
+          qemu-system-x86 shellcheck xorriso
+
+    - name: Validate repository
+      run: |
+        set -euo pipefail
+        python3 -m unittest discover -s tests -v
+        bash -n scripts/*.sh archiso/airootfs/root/*.sh \
+          archiso/airootfs/usr/local/bin/*.sh
+        shellcheck scripts/*.sh archiso/airootfs/root/*.sh \
+          archiso/airootfs/usr/local/bin/*.sh
 
     - name: Set up Buildx
       uses: docker/setup-buildx-action@v3
@@ -51,6 +66,16 @@ jobs:
           -w /build \
           frog-linux-build:latest \
           /build/scripts/build-in-container.sh
+
+    - name: Smoke test live boot
+      run: |
+        set -euo pipefail
+        mapfile -t isos < <(compgen -G './output/*.iso')
+        if [ "${#isos[@]}" -ne 1 ]; then
+          echo "Expected one ISO, found ${#isos[@]}." >&2
+          exit 1
+        fi
+        bash scripts/smoke-test-iso.sh "${isos[0]}"
 
     - name: Upload Frog Linux ISO
       uses: actions/upload-artifact@v4

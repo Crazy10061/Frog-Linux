@@ -61,6 +61,8 @@ rm -f /etc/resolv.conf
 
 # Credentials and autologin that only make sense on a live image.
 rm -f  /etc/sudoers.d/g_wheel
+usermod --lock liveuser
+gpasswd --delete liveuser wheel
 rm -rf /etc/systemd/system/getty@tty1.service.d
 rm -f  /etc/sddm.conf.d/autologin.conf
 rm -f  /etc/ssh/sshd_config.d/10-archiso.conf

@@ -41,6 +41,7 @@ iso_application="Frog Linux Live/Install CD"
 
 file_permissions+=(
   ["/usr/local/bin/frog-init.sh"]="0:0:755"
+  ["/usr/local/bin/frog-install-browser.sh"]="0:0:755"
   ["/usr/local/bin/frog-patch-tauri-desktop.sh"]="0:0:755"
   ["/usr/local/bin/frog-postinstall-cleanup.sh"]="0:0:755"
   ["/etc/skel/Desktop/install-frog-linux.desktop"]="0:0:755"

@@ -104,10 +104,6 @@ blueman
 cups
 cups-pdf
 system-config-printer
-# NVIDIA
-nvidia-open-dkms
-nvidia-utils
-nvidia-settings
 # Installer
 calamares
 sudo
