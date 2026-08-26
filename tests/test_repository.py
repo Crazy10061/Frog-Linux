@@ -1,3 +1,4 @@
+import json
 import os
 import shlex
 import subprocess
@@ -24,6 +25,31 @@ class PackageProfileTests(unittest.TestCase):
         self.assertNotIn("nvidia-open-dkms", packages)
         self.assertNotIn("nvidia-utils", packages)
         self.assertNotIn("nvidia-settings", packages)
+
+
+class FetchConfigurationTests(unittest.TestCase):
+    def test_fastfetch_and_fetch_use_the_frog_logo(self):
+        logo_path = REPO / "archiso/airootfs/etc/skel/.config/fastfetch/logo.txt"
+        config_path = REPO / "archiso/airootfs/etc/skel/.config/fastfetch/config.jsonc"
+        init = (REPO / "archiso/airootfs/usr/local/bin/frog-init.sh").read_text()
+        expected_logo = "\n".join(
+            [
+                "     ,.-----..__,.----.",
+                "   ,´__                \\",
+                "  / /  \\          ,--.  |",
+                " |  `\"\"´_..-.___  \\__/  |",
+                "(_\\                     \\",
+                " (__,.---'\"´`\"'--.__ _, _)",
+                "                    ``-.J",
+            ]
+        ) + "\n"
+
+        config = json.loads(config_path.read_text())
+        self.assertEqual(expected_logo, logo_path.read_text())
+        self.assertEqual("file-raw", config["logo"]["type"])
+        self.assertEqual("~/.config/fastfetch/logo.txt", config["logo"]["source"])
+        self.assertIn("alias fetch='fastfetch'", init)
+        self.assertIn("alias neofetch='fastfetch'", init)
 
 
 class BrowserInstallerTests(unittest.TestCase):

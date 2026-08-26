@@ -7,6 +7,8 @@ if command -v plasma-apply-wallpaperimage >/dev/null; then
   plasma-apply-wallpaperimage "$HOME/Wallpapers/frog.png" 2>/dev/null || true
 fi
 
-# Convenient shell alias
+# Convenient shell aliases
 grep -q "alias fetch='fastfetch'" ~/.bashrc 2>/dev/null || \
   echo "alias fetch='fastfetch'" >> ~/.bashrc
+grep -q "alias neofetch='fastfetch'" ~/.bashrc 2>/dev/null || \
+  echo "alias neofetch='fastfetch'" >> ~/.bashrc
