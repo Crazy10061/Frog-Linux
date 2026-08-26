@@ -1,6 +1,7 @@
 import json
 import os
 import shlex
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -25,6 +26,24 @@ class PackageProfileTests(unittest.TestCase):
         self.assertNotIn("nvidia-open-dkms", packages)
         self.assertNotIn("nvidia-utils", packages)
         self.assertNotIn("nvidia-settings", packages)
+
+
+class BrandingImageTests(unittest.TestCase):
+    def test_calamares_uses_correctly_sized_branding_images(self):
+        branding_dir = REPO / "archiso/airootfs/etc/calamares/branding/frog"
+        branding = (branding_dir / "branding.desc").read_text()
+
+        def png_size(name):
+            data = (branding_dir / name).read_bytes()
+            self.assertEqual(b"\x89PNG\r\n\x1a\n", data[:8])
+            return struct.unpack(">II", data[16:24])
+
+        self.assertIn('productIcon:         "icon.png"', branding)
+        self.assertIn('productLogo:         "logo.png"', branding)
+        self.assertIn('productWelcome:      "welcome.png"', branding)
+        self.assertEqual((512, 512), png_size("icon.png"))
+        self.assertEqual((512, 512), png_size("logo.png"))
+        self.assertEqual((640, 300), png_size("welcome.png"))
 
 
 class FetchConfigurationTests(unittest.TestCase):
