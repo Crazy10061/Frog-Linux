@@ -8,6 +8,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 BROWSER_INSTALLER = REPO / "archiso/airootfs/usr/local/bin/frog-install-browser.sh"
+CALAMARES_MODULES = REPO / "archiso/airootfs/etc/calamares/modules"
 SMOKE_TEST = REPO / "scripts/smoke-test-iso.sh"
 
 
@@ -79,6 +80,25 @@ class BrowserInstallerTests(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertEqual([], calls)
 
+    def test_brave_origin_is_available_and_installable(self):
+        chooser = (CALAMARES_MODULES / "packagechooser_browser.conf").read_text()
+        installer = (CALAMARES_MODULES / "contextualprocess_browser.conf").read_text()
+        result, calls = self.run_installer("brave-origin-bin")
+
+        self.assertIn("  - id: brave-origin", chooser)
+        self.assertIn("    package: brave-origin-bin", chooser)
+        self.assertIn("    name: Brave Origin", chooser)
+        self.assertIn("    brave-origin:", installer)
+        self.assertIn("frog-install-browser.sh brave-origin-bin", installer)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(
+            [
+                "-Syu --noconfirm --needed brave-origin-bin",
+                "-Rns --noconfirm firefox",
+            ],
+            calls,
+        )
+
     def test_helper_is_removed_only_after_browser_selection(self):
         cleanup = (
             REPO / "archiso/airootfs/usr/local/bin/frog-postinstall-cleanup.sh"
@@ -99,6 +119,15 @@ class BrowserInstallerTests(unittest.TestCase):
 
 
 class LiveUserCleanupTests(unittest.TestCase):
+    def test_live_session_logs_back_in_after_session_exit(self):
+        autologin = (
+            REPO / "archiso/airootfs/etc/sddm.conf.d/autologin.conf"
+        ).read_text()
+
+        self.assertIn("User=liveuser", autologin)
+        self.assertIn("Session=plasma.desktop", autologin)
+        self.assertIn("Relogin=true", autologin)
+
     def test_cleanup_revokes_liveuser_credentials_before_removal(self):
         cleanup = (
             REPO / "archiso/airootfs/usr/local/bin/frog-postinstall-cleanup.sh"
@@ -121,6 +150,15 @@ class LiveUserCleanupTests(unittest.TestCase):
         self.assertLess(verify_index, umount_index)
         self.assertIn("getent passwd liveuser", verification)
         self.assertNotIn('command: "-', verification)
+
+
+class UnpackfsConfigurationTests(unittest.TestCase):
+    def test_uses_mounted_airootfs_when_boot_medium_is_unmounted(self):
+        unpackfs = (CALAMARES_MODULES / "unpackfs.conf").read_text()
+
+        self.assertIn('source: "/run/archiso/airootfs"', unpackfs)
+        self.assertIn('sourcefs: "file"', unpackfs)
+        self.assertNotIn('source: "/run/archiso/bootmnt', unpackfs)
 
 
 class ContinuousIntegrationTests(unittest.TestCase):

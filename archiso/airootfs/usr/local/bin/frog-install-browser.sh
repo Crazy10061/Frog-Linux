@@ -3,7 +3,7 @@ set -euo pipefail
 
 browser_package="${1:-}"
 case "$browser_package" in
-    brave-bin|zen-browser-bin|chromium) ;;
+    brave-bin|brave-origin-bin|zen-browser-bin|chromium) ;;
     *)
         echo "ERROR: unsupported browser package: $browser_package" >&2
         exit 2
