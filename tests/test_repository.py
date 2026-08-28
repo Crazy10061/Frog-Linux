@@ -12,6 +12,7 @@ REPO = Path(__file__).resolve().parents[1]
 BROWSER_INSTALLER = REPO / "archiso/airootfs/usr/local/bin/frog-install-browser.sh"
 CALAMARES_MODULES = REPO / "archiso/airootfs/etc/calamares/modules"
 SMOKE_TEST = REPO / "scripts/smoke-test-iso.sh"
+BUILD_SCRIPT = REPO / "scripts/build-in-container.sh"
 
 
 class PackageProfileTests(unittest.TestCase):
@@ -204,6 +205,35 @@ class UnpackfsConfigurationTests(unittest.TestCase):
         self.assertIn('source: "/run/archiso/airootfs"', unpackfs)
         self.assertIn('sourcefs: "file"', unpackfs)
         self.assertNotIn('source: "/run/archiso/bootmnt', unpackfs)
+
+
+class CalamaresStartupTests(unittest.TestCase):
+    def test_welcome_requirements_avoid_crashing_hardware_probes(self):
+        welcome = (CALAMARES_MODULES / "welcome.conf").read_text()
+
+        self.assertNotIn("- power", welcome)
+        self.assertNotIn("- storage", welcome)
+        self.assertIn("- ram", welcome)
+        self.assertIn("- root", welcome)
+        self.assertIn("- screen", welcome)
+
+    def test_required_application_settings_are_explicit(self):
+        settings = (REPO / "archiso/airootfs/etc/calamares/settings.conf").read_text()
+
+        self.assertIn("oem-setup: false", settings)
+        self.assertIn("disable-cancel: false", settings)
+        self.assertIn("disable-cancel-during-exec: false", settings)
+        self.assertIn("hide-back-and-next-during-exec: false", settings)
+        self.assertIn("quit-at-end: false", settings)
+
+
+class LiveOverlayTests(unittest.TestCase):
+    def test_boot_entries_use_a_two_gibibyte_writable_overlay(self):
+        build_script = BUILD_SCRIPT.read_text()
+        smoke_test = SMOKE_TEST.read_text()
+
+        self.assertIn("cow_spacesize=2G", build_script)
+        self.assertIn("cow_spacesize=2G", smoke_test)
 
 
 class ContinuousIntegrationTests(unittest.TestCase):

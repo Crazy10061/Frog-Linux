@@ -19,7 +19,8 @@ find ./frog-profile/syslinux ./frog-profile/grub ./frog-profile/efiboot \
   xargs -0r sed -i \
     -e 's|vmlinuz-linux |vmlinuz-linux-cachyos |g' \
     -e 's|vmlinuz-linux$|vmlinuz-linux-cachyos|g' \
-    -e 's|initramfs-linux\.img|initramfs-linux-cachyos.img|g'
+    -e 's|initramfs-linux\.img|initramfs-linux-cachyos.img|g' \
+    -e '/archisobasedir=/ s|archisobasedir=|cow_spacesize=2G archisobasedir=|'
 
 PRESET_DIR=./frog-profile/airootfs/etc/mkinitcpio.d
 mkdir -p "$PRESET_DIR"

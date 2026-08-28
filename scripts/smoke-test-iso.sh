@@ -57,7 +57,7 @@ qemu-system-x86_64 \
     -m 4096 \
     -kernel "$SMOKE_DIR/vmlinuz" \
     -initrd "$SMOKE_DIR/initramfs.img" \
-    -append "archisobasedir=arch archisosearchuuid=$ISO_UUID console=tty0 console=ttyS0,115200n8 systemd.show_status=1 rd.systemd.show_status=1 systemd.unit=graphical.target" \
+    -append "cow_spacesize=2G archisobasedir=arch archisosearchuuid=$ISO_UUID console=tty0 console=ttyS0,115200n8 systemd.show_status=1 rd.systemd.show_status=1 systemd.unit=graphical.target" \
     -drive "file=$ISO_PATH,format=raw,media=cdrom,readonly=on" \
     -display none \
     -serial "file:$SERIAL_LOG" \
