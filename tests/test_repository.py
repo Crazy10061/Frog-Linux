@@ -24,6 +24,8 @@ class PackageProfileTests(unittest.TestCase):
         )
 
         self.assertIn("xf86-video-nouveau", packages)
+        self.assertIn("plasma-login-manager", packages)
+        self.assertNotIn("sddm", packages)
         self.assertNotIn("nvidia-open-dkms", packages)
         self.assertNotIn("nvidia-utils", packages)
         self.assertNotIn("nvidia-settings", packages)
@@ -167,7 +169,7 @@ class BrowserInstallerTests(unittest.TestCase):
 class LiveUserCleanupTests(unittest.TestCase):
     def test_live_session_logs_back_in_after_session_exit(self):
         autologin = (
-            REPO / "archiso/airootfs/etc/sddm.conf.d/autologin.conf"
+            REPO / "archiso/airootfs/etc/plasmalogin.conf.d/10-frog-live.conf"
         ).read_text()
 
         self.assertIn("User=liveuser", autologin)
@@ -252,15 +254,15 @@ class SmokeTestScriptTests(unittest.TestCase):
             capture_output=True,
         )
 
-    def test_strips_systemd_ansi_codes_before_matching_sddm(self):
+    def test_strips_systemd_ansi_codes_before_matching_plasmalogin(self):
         result = self.run_bash(
             "printf $'[\\e[0;32m  OK  \\e[0m] Started "
-            "\\e[0;1;39mSimple Desktop Display Manager\\e[0m.\\n' | strip_ansi"
+            "\\e[0;1;39mPlasma Login Manager\\e[0m.\\n' | strip_ansi"
         )
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            "[  OK  ] Started Simple Desktop Display Manager.\n",
+            "[  OK  ] Started Plasma Login Manager.\n",
             result.stdout,
         )
 

@@ -131,9 +131,8 @@ ln -sf /usr/lib/systemd/system/graphical.target \
   "$AIROOTFS/etc/systemd/system/default.target"
 
 WANTS_MU="$AIROOTFS/etc/systemd/system/multi-user.target.wants"
-WANTS_GR="$AIROOTFS/etc/systemd/system/graphical.target.wants"
 
-mkdir -p "$WANTS_MU" "$WANTS_GR"
+mkdir -p "$WANTS_MU"
 
 rm -f "$WANTS_MU"/{sshd,iwd,ModemManager,livecd-talk}.service
 rm -f "$WANTS_MU"/hv_{fcopy,kvp,vss}_daemon.service
@@ -145,8 +144,9 @@ rm -rf "$AIROOTFS/etc/systemd/system/network-online.target.wants"
 ln -sf /usr/lib/systemd/system/NetworkManager.service \
   "$WANTS_MU/NetworkManager.service"
 
-ln -sf /usr/lib/systemd/system/sddm.service \
-  "$WANTS_GR/sddm.service"
+rm -f "$AIROOTFS/etc/systemd/system/display-manager.service"
+ln -sf /usr/lib/systemd/system/plasmalogin.service \
+  "$AIROOTFS/etc/systemd/system/display-manager.service"
 
 ln -sf /usr/lib/systemd/system/ananicy-cpp.service \
   "$WANTS_MU/ananicy-cpp.service" || true

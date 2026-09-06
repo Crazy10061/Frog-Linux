@@ -71,8 +71,8 @@ while [ "$SECONDS" -lt "$DEADLINE" ]; do
         strip_ansi < "$SERIAL_LOG" > "$NORMALIZED_SERIAL_LOG"
     fi
 
-    if grep -q 'Started Simple Desktop Display Manager' "$NORMALIZED_SERIAL_LOG" 2>/dev/null; then
-        echo "Live ISO reached SDDM."
+    if grep -q 'Started Plasma Login Manager' "$NORMALIZED_SERIAL_LOG" 2>/dev/null; then
+        echo "Live ISO reached Plasma Login Manager."
         exit 0
     fi
 
@@ -84,7 +84,7 @@ while [ "$SECONDS" -lt "$DEADLINE" ]; do
 
     if ! kill -0 "$QEMU_PID" 2>/dev/null; then
         wait "$QEMU_PID" || true
-        echo "ERROR: QEMU exited before SDDM started." >&2
+        echo "ERROR: QEMU exited before Plasma Login Manager started." >&2
         tail -n 100 "$SERIAL_LOG" >&2 || true
         tail -n 100 "$QEMU_LOG" >&2 || true
         exit 1
@@ -93,6 +93,6 @@ while [ "$SECONDS" -lt "$DEADLINE" ]; do
     sleep 2
 done
 
-echo "ERROR: live ISO did not reach SDDM within 480 seconds." >&2
+echo "ERROR: live ISO did not reach Plasma Login Manager within 480 seconds." >&2
 tail -n 100 "$SERIAL_LOG" >&2 || true
 exit 1

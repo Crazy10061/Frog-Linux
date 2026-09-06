@@ -3,7 +3,7 @@ set -euo pipefail
 
 browser_package="${1:-}"
 case "$browser_package" in
-    brave-bin|brave-origin-bin|zen-browser-bin|chromium) ;;
+    helium-browser-bin|firefox|zen-browser-bin|chromium) ;;
     *)
         echo "ERROR: unsupported browser package: $browser_package" >&2
         exit 2
@@ -11,4 +11,4 @@ case "$browser_package" in
 esac
 
 pacman -Syu --noconfirm --needed "$browser_package"
-pacman -Rns --noconfirm firefox
+pacman -Rns --noconfirm brave-origin-bin

@@ -1,10 +1,6 @@
 # =====================================================================
 # FROG LINUX - PACKAGES CONFIGURATION (packages.x86_64)
 # =====================================================================
-# Kernels & System Firmware
-# linux-cachyos is the sole kernel. The workflow rewrites all releng boot
-# menu entries (syslinux/GRUB/systemd-boot) + mkinitcpio preset to point at
-# vmlinuz-linux-cachyos / initramfs-linux-cachyos.img.
 linux-firmware
 sof-firmware
 linux-cachyos
@@ -63,7 +59,7 @@ spectacle
 xdg-desktop-portal-kde
 phonon-qt6-vlc
 # Display manager
-sddm
+plasma-login-manager
 # Audio (PipeWire stack)
 pipewire
 pipewire-pulse
@@ -77,7 +73,7 @@ ttf-liberation
 noto-fonts
 noto-fonts-emoji
 # Applications
-firefox
+brave-origin-bin
 prismlauncher
 webkit2gtk-4.1
 # CLI / core utilities

@@ -61,12 +61,16 @@ rm -f /etc/resolv.conf
 
 # Credentials and autologin that only make sense on a live image.
 rm -f  /etc/sudoers.d/g_wheel
+rm -f /home/liveuser/.config/kwalletrc
 usermod --lock liveuser
 gpasswd --delete liveuser wheel
 rm -rf /etc/systemd/system/getty@tty1.service.d
-rm -f  /etc/sddm.conf.d/autologin.conf
+rm -f /etc/plasmalogin.conf.d/10-frog-live.conf
 rm -f  /etc/ssh/sshd_config.d/10-archiso.conf
 rm -f  /root/.automated_script.sh /root/.zlogin
+rm -f /etc/systemd/system/display-manager.service
+ln -s /usr/lib/systemd/system/plasmalogin.service \
+    /etc/systemd/system/display-manager.service
 
 # A volatile journal and inhibited suspend are right for a live image and wrong
 # once installed.

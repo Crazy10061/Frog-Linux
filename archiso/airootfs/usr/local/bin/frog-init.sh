@@ -12,3 +12,15 @@ grep -q "alias fetch='fastfetch'" ~/.bashrc 2>/dev/null || \
   echo "alias fetch='fastfetch'" >> ~/.bashrc
 grep -q "alias neofetch='fastfetch'" ~/.bashrc 2>/dev/null || \
   echo "alias neofetch='fastfetch'" >> ~/.bashrc
+
+if systemctl is-active --quiet NetworkManager; then
+    (
+        for _ in {1..30}; do
+            if getent hosts archlinux.org >/dev/null 2>&1; then
+                pacman -Sy --noconfirm >/dev/null 2>&1 || true
+                break
+            fi
+            sleep 2
+        done
+    ) &
+fi
