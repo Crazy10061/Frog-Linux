@@ -104,14 +104,14 @@ class BrowserInstallerTests(unittest.TestCase):
             calls = log.read_text().splitlines() if log.exists() else []
             return result, calls
 
-    def test_removes_firefox_after_browser_install_succeeds(self):
+    def test_removes_preinstalled_brave_origin_after_browser_install_succeeds(self):
         result, calls = self.run_installer("chromium")
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
             [
                 "-Syu --noconfirm --needed chromium",
-                "-Rns --noconfirm firefox",
+                "-Rns --noconfirm brave-origin-bin",
             ],
             calls,
         )
@@ -128,24 +128,21 @@ class BrowserInstallerTests(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertEqual([], calls)
 
-    def test_brave_origin_is_available_and_installable(self):
+    def test_brave_origin_is_preinstalled_and_selected_without_reinstalling(self):
         chooser = (CALAMARES_MODULES / "packagechooser_browser.conf").read_text()
         installer = (CALAMARES_MODULES / "contextualprocess_browser.conf").read_text()
-        result, calls = self.run_installer("brave-origin-bin")
+        packages = {
+            line.strip()
+            for line in (REPO / "archiso/packages.x86_64").read_text().splitlines()
+            if line.strip() and not line.startswith("#")
+        }
 
+        self.assertIn("brave-origin-bin", packages)
         self.assertIn("  - id: brave-origin", chooser)
         self.assertIn("    package: brave-origin-bin", chooser)
         self.assertIn("    name: Brave Origin", chooser)
         self.assertIn("    brave-origin:", installer)
         self.assertIn('        - command: "/bin/true"', installer)
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual(
-            [
-                "-Syu --noconfirm --needed brave-origin-bin",
-                "-Rns --noconfirm firefox",
-            ],
-            calls,
-        )
 
     def test_helper_is_removed_only_after_browser_selection(self):
         cleanup = (
