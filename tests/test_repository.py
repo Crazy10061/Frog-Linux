@@ -105,12 +105,12 @@ class BrowserInstallerTests(unittest.TestCase):
             return result, calls
 
     def test_removes_firefox_after_browser_install_succeeds(self):
-        result, calls = self.run_installer("brave-bin")
+        result, calls = self.run_installer("chromium")
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
             [
-                "-Syu --noconfirm --needed brave-bin",
+                "-Syu --noconfirm --needed chromium",
                 "-Rns --noconfirm firefox",
             ],
             calls,
@@ -137,7 +137,7 @@ class BrowserInstallerTests(unittest.TestCase):
         self.assertIn("    package: brave-origin-bin", chooser)
         self.assertIn("    name: Brave Origin", chooser)
         self.assertIn("    brave-origin:", installer)
-        self.assertIn("frog-install-browser.sh brave-origin-bin", installer)
+        self.assertIn('        - command: "/bin/true"', installer)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
             [
