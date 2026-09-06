@@ -17,6 +17,10 @@ sed -i 's/^\s*DownloadUser\s*=/#&/' ./frog-profile/pacman.conf || true
 
 cat >> ./frog-profile/pacman.conf <<'EOF'
 
+[frog-local]
+SigLevel = Optional TrustAll
+Server = file:///var/local-repo
+
 [cachyos]
 SigLevel = Required DatabaseOptional
 Server = https://mirror.cachyos.org/repo/$arch/$repo
@@ -72,6 +76,9 @@ AIROOTFS=./frog-profile/airootfs
 
 cp ./frog-profile/pacman.conf "$AIROOTFS/etc/pacman.conf"
 
+sed -i '/^\[frog-local\]/,/^$/d' \
+  "$AIROOTFS/etc/pacman.conf"
+
 sed -i '/^\[options\]/a IgnorePkg = webkit2gtk-4.1 webkit2gtk' \
   "$AIROOTFS/etc/pacman.conf"
 
@@ -85,15 +92,30 @@ if [ ! -s "$AIROOTFS/etc/pacman.d/mirrorlist" ]; then
   fi
 fi
 
-echo "==> Pacman repositories:"
+echo "==> Build-time pacman repositories:"
+grep -E '^\[[^]]+\]' ./frog-profile/pacman.conf
+
+for repo in core extra frog-local cachyos; do
+  if ! grep -qx "\[$repo\]" ./frog-profile/pacman.conf; then
+    echo "ERROR: Required build repository [$repo] missing from pacman.conf." >&2
+    exit 1
+  fi
+done
+
+echo "==> Live-system pacman repositories:"
 grep -E '^\[[^]]+\]' "$AIROOTFS/etc/pacman.conf"
 
 for repo in core extra cachyos; do
   if ! grep -qx "\[$repo\]" "$AIROOTFS/etc/pacman.conf"; then
-    echo "ERROR: Required repository [$repo] missing from pacman.conf." >&2
+    echo "ERROR: Required repository [$repo] missing from live pacman.conf." >&2
     exit 1
   fi
 done
+
+if grep -qx '\[frog-local\]' "$AIROOTFS/etc/pacman.conf"; then
+  echo "ERROR: Build-only [frog-local] repository leaked into live pacman.conf." >&2
+  exit 1
+fi
 
 if [ ! -s "$AIROOTFS/etc/pacman.d/mirrorlist" ]; then
   echo "ERROR: Arch mirrorlist is missing or empty." >&2
